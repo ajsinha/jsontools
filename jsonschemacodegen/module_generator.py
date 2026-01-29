@@ -176,7 +176,12 @@ class ModuleGenerator:
                         class_name = f"{base_name}{counter}"
                         counter += 1
                 
-                processor = SchemaProcessor(schema, root_class_name=class_name)
+                # Pass base_uri for resolving relative $ref like "Bond.json"
+                processor = SchemaProcessor(
+                    schema, 
+                    root_class_name=class_name,
+                    base_uri=str(schema_file.resolve())
+                )
                 code = processor.generate_code(
                     style="dataclass",
                     all_fields_optional=self.all_fields_optional

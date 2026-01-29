@@ -299,10 +299,24 @@ class ReferenceResolver:
         
         # Resolve relative to base URI if needed
         if self.base_uri and not os.path.isabs(uri):
-            base_path = urlparse(self.base_uri).path
+            # Handle base_uri as file path or URI
+            base_path = self.base_uri
+            if base_path.startswith("file://"):
+                base_path = base_path[7:]
+            
+            # If base_uri looks like a URL, extract path
+            parsed = urlparse(base_path)
+            if parsed.scheme and parsed.scheme != "file":
+                base_path = parsed.path
+            
+            # If base_path is a file, get its directory
             if os.path.isfile(base_path):
                 base_path = os.path.dirname(base_path)
+            
             uri = os.path.join(base_path, uri)
+        
+        # Normalize the path
+        uri = os.path.normpath(uri)
         
         try:
             with open(uri, "r", encoding="utf-8") as f:
