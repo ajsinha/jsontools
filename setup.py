@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 # Read version
-version = "1.2.2"
+version = "1.2.3"
 
 # Read long description
 readme_path = Path(__file__).parent / "README.md"
