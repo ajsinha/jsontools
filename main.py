@@ -28,7 +28,7 @@ from jsonschemacodegen import (
     SchemaProcessor,
     generate_code,
     generate_samples,
-    generate_pydantic_models,
+    generate_module,
     __version__,
 )
 from jsonschemacodegen.utils import load_schema
@@ -108,9 +108,10 @@ def demo_complex_schema():
                 "properties": {
                     "street": {"type": "string"},
                     "city": {"type": "string"},
-                    "country": {"type": "string"}
+                    "zipCode": {"type": "string"},
+                    "country": {"type": "string", "default": "US"}
                 },
-                "required": ["street", "city", "country"]
+                "required": ["street", "city", "zipCode"]
             },
             "LineItem": {
                 "type": "object",
@@ -118,9 +119,9 @@ def demo_complex_schema():
                     "productId": {"type": "string"},
                     "name": {"type": "string"},
                     "quantity": {"type": "integer", "minimum": 1},
-                    "price": {"type": "number", "minimum": 0}
+                    "unitPrice": {"type": "number", "minimum": 0}
                 },
-                "required": ["productId", "quantity", "price"]
+                "required": ["productId", "name", "quantity", "unitPrice"]
             }
         },
         "properties": {
@@ -128,74 +129,35 @@ def demo_complex_schema():
             "customer": {
                 "type": "object",
                 "properties": {
+                    "id": {"type": "string"},
                     "name": {"type": "string"},
                     "email": {"type": "string", "format": "email"}
                 },
-                "required": ["name", "email"]
+                "required": ["id", "name", "email"]
             },
+            "shippingAddress": {"$ref": "#/definitions/Address"},
+            "billingAddress": {"$ref": "#/definitions/Address"},
             "items": {
                 "type": "array",
                 "items": {"$ref": "#/definitions/LineItem"},
                 "minItems": 1
             },
-            "shippingAddress": {"$ref": "#/definitions/Address"},
-            "status": {
-                "type": "string",
-                "enum": ["pending", "processing", "shipped", "delivered"]
-            },
-            "total": {"type": "number"},
-            "createdAt": {"type": "string", "format": "date-time"}
+            "totalAmount": {"type": "number", "minimum": 0},
+            "status": {"type": "string", "enum": ["pending", "processing", "shipped", "delivered"]}
         },
-        "required": ["orderId", "customer", "items", "status"]
+        "required": ["orderId", "customer", "items", "totalAmount", "status"]
     }
+    
+    print_subheader("Complex Schema with $ref")
+    print(json.dumps(schema, indent=2)[:500] + "...")
     
     processor = SchemaProcessor(schema, root_class_name="Order")
     
-    # Show parsed info
-    print_subheader("Schema Structure")
-    info = processor.parse()
-    print(f"Title: {info.title}")
-    print(f"Definitions: {list(info.definitions.keys())}")
-    print(f"Properties: {list(info.properties.keys())}")
-    
-    # Generate code
-    print_subheader("Generated Code")
+    print_subheader("Generated Code (truncated)")
     code = processor.generate_code()
-    print(code)
+    print(code[:1500] + "...")
     
-    # Generate sample
     print_subheader("Generated Sample Order")
-    sample = processor.generate_samples(count=1)[0]
-    print(json.dumps(sample, indent=2, default=str))
-
-
-def demo_pydantic_generation():
-    """Demonstrate Pydantic model generation."""
-    print_header("PYDANTIC MODEL GENERATION")
-    
-    schema = {
-        "type": "object",
-        "title": "Product",
-        "properties": {
-            "id": {"type": "string", "format": "uuid"},
-            "name": {"type": "string", "minLength": 1, "maxLength": 255},
-            "description": {"type": "string"},
-            "price": {"type": "number", "minimum": 0},
-            "category": {"type": "string", "enum": ["electronics", "clothing", "food", "other"]},
-            "tags": {"type": "array", "items": {"type": "string"}, "uniqueItems": True},
-            "inStock": {"type": "boolean", "default": True},
-            "createdAt": {"type": "string", "format": "date-time"}
-        },
-        "required": ["id", "name", "price", "category"]
-    }
-    
-    processor = SchemaProcessor(schema, root_class_name="Product")
-    
-    print_subheader("Generated Pydantic Model")
-    pydantic_code = processor.generate_pydantic_models()
-    print(pydantic_code)
-    
-    print_subheader("Sample Product Data")
     sample = processor.generate_samples(count=1)[0]
     print(json.dumps(sample, indent=2, default=str))
 
@@ -248,76 +210,120 @@ def demo_file_schemas():
     """Demonstrate loading and processing file-based schemas."""
     print_header("FILE-BASED SCHEMA DEMONSTRATION")
     
-    schema_dir = Path(__file__).parent / "examples" / "schemas"
+    # Check if examples exist
+    examples_dir = Path(__file__).parent / "examples" / "schemas"
     
-    if not schema_dir.exists():
-        print(f"Schema directory not found: {schema_dir}")
+    if not examples_dir.exists():
+        print(f"Examples directory not found: {examples_dir}")
         return
     
-    # List available schemas
-    schemas = list(schema_dir.glob("*.json"))
-    print(f"Found {len(schemas)} example schemas:\n")
+    schema_files = list(examples_dir.glob("*.json"))[:3]
     
-    for schema_path in sorted(schemas)[:5]:
-        print(f"  - {schema_path.name}")
+    if not schema_files:
+        print("No schema files found in examples directory")
+        return
     
-    if len(schemas) > 5:
-        print(f"  ... and {len(schemas) - 5} more")
-    
-    # Process first schema
-    if schemas:
-        print_subheader(f"Processing: {sorted(schemas)[0].name}")
-        schema = load_schema(sorted(schemas)[0])
-        processor = SchemaProcessor(schema)
+    for schema_file in schema_files:
+        print_subheader(f"Processing: {schema_file.name}")
         
-        info = processor.parse()
-        print(f"Title: {info.title or 'N/A'}")
-        print(f"Properties: {len(info.properties)}")
-        print(f"Definitions: {len(info.definitions)}")
+        try:
+            schema = load_schema(str(schema_file))
+            title = schema.get("title", schema_file.stem)
+            
+            processor = SchemaProcessor(schema, root_class_name=title)
+            
+            # Generate code
+            code = processor.generate_code()
+            print(f"Generated class: {title}")
+            print(f"Code length: {len(code)} characters")
+            
+            # Generate sample
+            sample = processor.generate_samples(count=1)[0]
+            print(f"Sample keys: {list(sample.keys())[:5]}...")
+            
+        except Exception as e:
+            print(f"Error: {e}")
+
+
+def demo_module_generation():
+    """Demonstrate module generation from schema folder."""
+    print_header("MODULE GENERATION DEMONSTRATION")
+    
+    # Check if examples exist
+    examples_dir = Path(__file__).parent / "examples" / "schemas"
+    output_dir = Path(__file__).parent / "demo_output"
+    
+    if not examples_dir.exists():
+        print(f"Examples directory not found: {examples_dir}")
+        return
+    
+    print_subheader("Generating Module from Schema Folder")
+    print(f"Schema directory: {examples_dir}")
+    print(f"Output directory: {output_dir}")
+    
+    try:
+        result = generate_module(
+            schema_dir=str(examples_dir),
+            output_dir=str(output_dir),
+            module_name="demo_models",
+            overwrite=True,
+        )
         
-        print_subheader("Sample Data")
-        sample = processor.generate_samples(count=1)[0]
-        sample_str = json.dumps(sample, indent=2, default=str)
-        print(sample_str[:1000])
-        if len(sample_str) > 1000:
-            print("... (truncated)")
+        print(f"\nSchemas processed: {result['schemas_processed']}")
+        print(f"Classes generated: {len(result['classes_generated'])}")
+        
+        print("\nGenerated classes:")
+        for class_name in sorted(result['classes_generated'])[:10]:
+            print(f"  - {class_name}")
+        if len(result['classes_generated']) > 10:
+            print(f"  ... and {len(result['classes_generated']) - 10} more")
+        
+        if result['errors']:
+            print("\nErrors:")
+            for error in result['errors']:
+                print(f"  - {error}")
+        
+        print(f"\nOutput directory created at: {output_dir}")
+        print("\nTo use the generated module:")
+        print(f"  from demo_models import User, load_json, to_json")
+        
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def main():
     """Run all demonstrations."""
-    print("""
-╔══════════════════════════════════════════════════════════════════╗
-║                     JsonSchemaCodeGen v{version}                      ║
-║                                                                  ║
-║  Commercial Grade JSON Schema to Python Code Generator           ║
-║                                                                  ║
-║  Copyright © 2025-2030, All Rights Reserved                      ║
-║  Ashutosh Sinha (ajsinha@gmail.com)                              ║
-╚══════════════════════════════════════════════════════════════════╝
-""".format(version=__version__))
+    print("=" * 70)
+    print("  JsonSchemaCodeGen v{} - Demonstration".format(__version__))
+    print("=" * 70)
+    print("\nCopyright © 2025-2030, Ashutosh Sinha. All Rights Reserved.")
+    print("This software is proprietary and confidential.\n")
     
-    print("This script demonstrates the key features of JsonSchemaCodeGen.\n")
+    demos = [
+        ("Basic Usage", demo_basic_usage),
+        ("Complex Schema", demo_complex_schema),
+        ("Validation", demo_validation),
+        ("File-Based Schemas", demo_file_schemas),
+        ("Module Generation", demo_module_generation),
+    ]
     
-    try:
-        demo_basic_usage()
-        demo_complex_schema()
-        demo_pydantic_generation()
-        demo_validation()
-        demo_file_schemas()
-        
-        print_header("DEMONSTRATION COMPLETE")
-        print("For more information, see the README.md file.")
-        print("For CLI usage: python -m jsonschemacodegen --help")
-        print("\nCopyright © 2025-2030, Ashutosh Sinha. All Rights Reserved.")
-        
-    except Exception as e:
-        print(f"\nError during demonstration: {e}")
-        import traceback
-        traceback.print_exc()
-        return 1
+    for name, demo_func in demos:
+        try:
+            demo_func()
+        except Exception as e:
+            print(f"\nError during {name} demonstration: {e}")
+            import traceback
+            traceback.print_exc()
     
-    return 0
+    print_header("DEMONSTRATION COMPLETE")
+    print("Thank you for using JsonSchemaCodeGen!")
+    print("\nFor more information, see:")
+    print("  - README.md")
+    print("  - docs/QUICKSTART.md")
+    print("  - docs/ARCHITECTURE.md")
+    print("  - docs/MODULE_GENERATOR.md")
+    print("  - docs/EXAMPLES.md")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

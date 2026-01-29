@@ -218,7 +218,7 @@ class SchemaProcessor:
         Generate Python source code from the schema.
         
         Args:
-            style: Code style ("dataclass", "pydantic", "attrs")
+            style: Code style ("dataclass" or "attrs")
             include_validators: Whether to include validation methods
             
         Returns:
@@ -234,24 +234,6 @@ class SchemaProcessor:
             root_class_name=self.root_class_name,
             style=style,
             include_validators=include_validators,
-        )
-        
-        return generator.generate()
-    
-    def generate_pydantic_models(self) -> str:
-        """
-        Generate Pydantic model source code.
-        
-        Returns:
-            Python source code with Pydantic models
-        """
-        # Import here to avoid circular imports
-        from ..generators.pydantic_generator import PydanticGenerator
-        
-        generator = PydanticGenerator(
-            self.schema,
-            resolver=self.resolver,
-            root_class_name=self.root_class_name,
         )
         
         return generator.generate()

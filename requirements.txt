@@ -14,10 +14,6 @@
 # With all optional features:
 #   pip install -r requirements.txt
 #
-# Or install specific feature sets:
-#   pip install -r requirements-faker.txt
-#   pip install -r requirements-dev.txt
-#
 # ============================================================================
 
 # ============================================================================
@@ -42,10 +38,6 @@ requests>=2.28.0
 # Provides full JSON Schema validation support
 jsonschema>=4.17.0
 
-# --- Pydantic Model Support ---
-# Required for Pydantic v2 model generation features
-pydantic>=2.0.0
-
 # ============================================================================
 # DEVELOPMENT DEPENDENCIES
 # ============================================================================
@@ -63,10 +55,6 @@ mypy>=1.0.0
 
 # --- Linting ---
 flake8>=6.0.0
-
-# --- Documentation ---
-# mkdocs>=1.5.0
-# mkdocs-material>=9.0.0
 
 # ============================================================================
 # PYTHON VERSION

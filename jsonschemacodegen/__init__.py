@@ -18,45 +18,49 @@ described herein may be subject to patent applications.
 =========================================================================
 
 A comprehensive library for working with JSON Schema in Python:
-- Generate Python classes from JSON Schema
+- Generate Python dataclass models from JSON Schema
 - Generate sample JSON data from schemas
 - Handle complex schemas with $ref, allOf, anyOf, oneOf
 - Support for remote and local schema references
-- Pydantic model generation
+- Generate complete Python modules from schema folders
 - Full JSON Schema Draft-07 support
 
 Usage:
-    from jsonschemacodegen import SchemaProcessor, generate_classes, generate_samples
+    from jsonschemacodegen import SchemaProcessor, generate_code, generate_samples
 
-    # Quick start
+    # Quick start with single schema
     processor = SchemaProcessor(schema)
-    classes = processor.generate_classes()
+    code = processor.generate_code()
     samples = processor.generate_samples(count=5)
-
-Author: JsonSchemaCodeGen Team
-License: MIT
+    
+    # Generate complete module from schema folder
+    from jsonschemacodegen import generate_module
+    generate_module("schemas/", "myapp/models")
 """
 
 __version__ = "1.0.0"
-__author__ = "JsonSchemaCodeGen Team"
+__author__ = "Ashutosh Sinha"
+__email__ = "ajsinha@gmail.com"
 
 from .core.schema_parser import SchemaParser
 from .core.reference_resolver import ReferenceResolver
 from .core.type_mapper import TypeMapper
 from .core.validator import SchemaValidator
+from .core.schema_processor import SchemaProcessor
 
 from .generators.sample_generator import SampleGenerator, generate_samples
 from .generators.class_generator import ClassGenerator, generate_classes
 from .generators.code_generator import CodeGenerator, generate_code
-from .generators.pydantic_generator import PydanticGenerator, generate_pydantic_models
 
 from .models.base import BaseModel, JsonSerializable
 
-from .core.schema_processor import SchemaProcessor
+from .module_generator import ModuleGenerator, generate_module
 
 __all__ = [
-    # Version
+    # Version info
     "__version__",
+    "__author__",
+    "__email__",
     
     # Core
     "SchemaParser",
@@ -69,13 +73,15 @@ __all__ = [
     "SampleGenerator",
     "ClassGenerator",
     "CodeGenerator",
-    "PydanticGenerator",
+    
+    # Module Generator
+    "ModuleGenerator",
     
     # Convenience functions
     "generate_samples",
     "generate_classes",
     "generate_code",
-    "generate_pydantic_models",
+    "generate_module",
     
     # Models
     "BaseModel",

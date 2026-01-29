@@ -211,14 +211,19 @@ Each class includes:
             else:
                 optional_fields.append(field_info)
         
-        # Property mapping for JSON serialization
+        # Property mapping for JSON serialization - use a class variable (ClassVar)
+        # instead of a dataclass field to avoid mutable default issues
         lines.append("    # Property name mapping for JSON serialization")
         mapping_items = []
         for f in required_fields + optional_fields:
-            mapping_items.append(f'        "{f["name"]}": "{f["original_name"]}"')
-        lines.append("    _json_mapping: Dict[str, str] = {")
+            mapping_items.append(f'            "{f["name"]}": "{f["original_name"]}"')
+        
+        # Use a method to get the mapping instead of a class field
+        lines.append("    @classmethod")
+        lines.append("    def _get_json_mapping(cls) -> Dict[str, str]:")
+        lines.append("        return {")
         lines.append(",\n".join(mapping_items))
-        lines.append("    }")
+        lines.append("        }")
         lines.append("")
         
         # Generate required fields (no defaults)
@@ -308,7 +313,7 @@ Each class includes:
             "    def to_dict(self) -> Dict[str, Any]:",
             '        """Convert to dictionary with original JSON property names."""',
             "        result = {}",
-            "        for py_name, json_name in self._json_mapping.items():",
+            "        for py_name, json_name in self._get_json_mapping().items():",
             "            value = getattr(self, py_name, None)",
             "            if value is not None:",
             "                if hasattr(value, 'to_dict'):",
@@ -339,7 +344,7 @@ Each class includes:
             "    @classmethod",
             f"    def from_dict(cls, data: Dict[str, Any]) -> '{class_name}':",
             '        """Create instance from dictionary."""',
-            "        reverse_mapping = {v: k for k, v in cls._json_mapping.items()}",
+            "        reverse_mapping = {v: k for k, v in cls._get_json_mapping().items()}",
             "        kwargs = {}",
             "        for json_name, value in data.items():",
             "            py_name = reverse_mapping.get(json_name, json_name)",
@@ -367,10 +372,15 @@ Each class includes:
         if safe and safe[0].isdigit():
             safe = "_" + safe
         
+        # Python keywords and built-ins that conflict with dataclass usage
         keywords = {
             "class", "def", "return", "import", "from", "for", "while",
             "if", "else", "elif", "try", "except", "finally", "with",
             "as", "is", "in", "not", "and", "or", "True", "False", "None",
+            # Dataclass-specific conflicts
+            "field", "dataclass", "asdict", "astuple", "fields",
+            # Common conflicts
+            "type", "id", "list", "dict", "set", "str", "int", "float", "bool",
         }
         if safe in keywords:
             safe = safe + "_"

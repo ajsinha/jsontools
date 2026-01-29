@@ -17,6 +17,7 @@ Usage:
     jsonschemacodegen generate --schema schema.json --output models.py
     jsonschemacodegen sample --schema schema.json --count 5
     jsonschemacodegen validate --schema schema.json --data data.json
+    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir models/
 """
 
 import argparse
@@ -29,7 +30,6 @@ from .core.schema_processor import SchemaProcessor
 from .core.validator import SchemaValidator
 from .generators.sample_generator import SampleGenerator
 from .generators.code_generator import CodeGenerator
-from .generators.pydantic_generator import PydanticGenerator
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -43,9 +43,6 @@ Examples:
   Generate Python dataclasses:
     jsonschemacodegen generate -s schema.json -o models.py
     
-  Generate Pydantic models:
-    jsonschemacodegen generate -s schema.json -o models.py --style pydantic
-    
   Generate sample JSON data:
     jsonschemacodegen sample -s schema.json -c 10 -o samples.json
     
@@ -54,6 +51,9 @@ Examples:
     
   Validate data against schema:
     jsonschemacodegen validate -s schema.json -d data.json
+    
+  Generate module from schema folder:
+    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir mymodule/
     
   Analyze schema complexity:
     jsonschemacodegen info -s schema.json
@@ -84,12 +84,6 @@ Examples:
         help="Output file path (default: generated_models.py)",
     )
     gen_parser.add_argument(
-        "--style",
-        choices=["dataclass", "pydantic"],
-        default="dataclass",
-        help="Code style to generate (default: dataclass)",
-    )
-    gen_parser.add_argument(
         "--class-name",
         default="Root",
         help="Name for the root class (default: Root)",
@@ -98,6 +92,32 @@ Examples:
         "--no-validators",
         action="store_true",
         help="Don't include validation methods",
+    )
+    
+    # Generate Module command
+    mod_parser = subparsers.add_parser(
+        "generate-module",
+        help="Generate a Python module from a folder of JSON schemas",
+    )
+    mod_parser.add_argument(
+        "--schema-dir",
+        required=True,
+        help="Path to directory containing JSON Schema files",
+    )
+    mod_parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Path where the Python module will be created",
+    )
+    mod_parser.add_argument(
+        "--module-name",
+        help="Name for the module (defaults to output-dir basename)",
+    )
+    mod_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        default=True,
+        help="Overwrite existing files (default: True)",
     )
     
     # Sample command
@@ -200,17 +220,11 @@ def cmd_generate(args) -> int:
             schema = json.load(f)
         
         # Generate code
-        if args.style == "pydantic":
-            generator = PydanticGenerator(
-                schema,
-                root_class_name=args.class_name,
-            )
-        else:
-            generator = CodeGenerator(
-                schema,
-                root_class_name=args.class_name,
-                include_validators=not args.no_validators,
-            )
+        generator = CodeGenerator(
+            schema,
+            root_class_name=args.class_name,
+            include_validators=not args.no_validators,
+        )
         
         code = generator.generate()
         
@@ -223,6 +237,44 @@ def cmd_generate(args) -> int:
         
         print(f"✓ Generated code written to {args.output}")
         return 0
+        
+    except Exception as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_generate_module(args) -> int:
+    """Handle generate-module command."""
+    try:
+        from .module_generator import ModuleGenerator
+        
+        generator = ModuleGenerator(
+            schema_dir=args.schema_dir,
+            output_dir=args.output_dir,
+            module_name=args.module_name,
+            overwrite=args.overwrite,
+        )
+        
+        result = generator.generate()
+        
+        print(f"✓ Module generation complete!")
+        print(f"  Schemas processed: {result['schemas_processed']}")
+        print(f"  Classes generated: {len(result['classes_generated'])}")
+        print(f"  Files created: {len(result['files_created'])}")
+        
+        if result['classes_generated']:
+            print(f"\n  Generated classes:")
+            for class_name in sorted(result['classes_generated']):
+                print(f"    - {class_name}")
+        
+        if result['errors']:
+            print(f"\n  Errors:")
+            for error in result['errors']:
+                print(f"    ✗ {error}")
+        
+        print(f"\n  Output directory: {args.output_dir}")
+        
+        return 0 if not result['errors'] else 1
         
     except Exception as e:
         print(f"✗ Error: {e}", file=sys.stderr)
@@ -244,10 +296,7 @@ def cmd_sample(args) -> int:
         )
         
         # Format output
-        if args.count == 1:
-            output = json.dumps(samples, indent=2, default=str)
-        else:
-            output = json.dumps(samples, indent=2, default=str)
+        output = json.dumps(samples, indent=2, default=str)
         
         # Write output
         if args.output:
@@ -402,6 +451,7 @@ def main(argv: Optional[list] = None) -> int:
     
     commands = {
         "generate": cmd_generate,
+        "generate-module": cmd_generate_module,
         "sample": cmd_sample,
         "validate": cmd_validate,
         "info": cmd_info,

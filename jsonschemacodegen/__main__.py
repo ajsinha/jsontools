@@ -18,7 +18,6 @@ described herein may be subject to patent applications.
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -28,7 +27,7 @@ from jsonschemacodegen import (
     generate_classes,
     generate_samples,
     generate_code,
-    generate_pydantic_models,
+    generate_module,
     __version__,
 )
 from jsonschemacodegen.core import SchemaValidator
@@ -55,16 +54,39 @@ def cmd_generate_classes(args):
     schema = load_schema(args.schema)
     processor = SchemaProcessor(schema, root_class_name=args.class_name)
     
-    if args.style == "pydantic":
-        code = processor.generate_pydantic_models()
-    else:
-        code = processor.generate_code(style=args.style)
+    code = processor.generate_code(style="dataclass")
     
     if args.output:
         save_code(code, args.output)
         print(f"✓ Generated code saved to: {args.output}")
     else:
         print(code)
+
+
+def cmd_generate_module(args):
+    """Generate Python module from schema folder."""
+    result = generate_module(
+        schema_dir=args.schema_dir,
+        output_dir=args.output_dir,
+        module_name=args.module_name,
+        overwrite=True,
+    )
+    
+    print(f"✓ Module generation complete!")
+    print(f"  Schemas processed: {result['schemas_processed']}")
+    print(f"  Classes generated: {len(result['classes_generated'])}")
+    
+    if result['classes_generated']:
+        print(f"\n  Generated classes:")
+        for name in sorted(result['classes_generated'])[:10]:
+            print(f"    - {name}")
+        if len(result['classes_generated']) > 10:
+            print(f"    ... and {len(result['classes_generated']) - 10} more")
+    
+    if result['errors']:
+        print(f"\n  Errors:")
+        for err in result['errors']:
+            print(f"    ✗ {err}")
 
 
 def cmd_generate_samples(args):
@@ -77,10 +99,7 @@ def cmd_generate_samples(args):
         use_faker=not args.no_faker,
     )
     
-    if args.count == 1:
-        output = json.dumps(samples, indent=2, default=str)
-    else:
-        output = json.dumps(samples, indent=2, default=str)
+    output = json.dumps(samples, indent=2, default=str)
     
     if args.output:
         with open(args.output, "w") as f:
@@ -95,14 +114,12 @@ def cmd_validate(args):
     schema = load_schema(args.schema)
     
     if args.data:
-        # Validate data against schema
         with open(args.data, "r") as f:
             data = json.load(f)
         
         processor = SchemaProcessor(schema)
         result = processor.validate_data(data)
     else:
-        # Validate the schema itself
         validator = SchemaValidator()
         result = validator.validate_schema(schema)
     
@@ -136,13 +153,6 @@ def cmd_info(args):
     print(f"\n  Definitions ({len(info.definitions)}):")
     for name in info.definitions:
         print(f"    - {name}")
-    
-    if info.all_of:
-        print(f"\n  allOf schemas: {len(info.all_of)}")
-    if info.any_of:
-        print(f"  anyOf schemas: {len(info.any_of)}")
-    if info.one_of:
-        print(f"  oneOf schemas: {len(info.one_of)}")
 
 
 def cmd_interactive(args):
@@ -165,7 +175,7 @@ def cmd_interactive(args):
         parts = cmd.split()
         action = parts[0].lower()
         
-        if action == "exit" or action == "quit":
+        if action in ("exit", "quit"):
             print("Goodbye!")
             break
         
@@ -270,13 +280,29 @@ def main():
         default="Root",
         help="Name for the root class (default: Root)",
     )
-    gen_parser.add_argument(
-        "-s", "--style",
-        choices=["dataclass", "pydantic", "attrs"],
-        default="dataclass",
-        help="Code style (default: dataclass)",
-    )
     gen_parser.set_defaults(func=cmd_generate_classes)
+    
+    # Generate module command
+    mod_parser = subparsers.add_parser(
+        "generate-module",
+        aliases=["genmod"],
+        help="Generate Python module from schema folder",
+    )
+    mod_parser.add_argument(
+        "--schema-dir",
+        required=True,
+        help="Path to directory containing JSON Schema files",
+    )
+    mod_parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Path where the Python module will be created",
+    )
+    mod_parser.add_argument(
+        "--module-name",
+        help="Name for the module (defaults to output-dir basename)",
+    )
+    mod_parser.set_defaults(func=cmd_generate_module)
     
     # Generate samples command
     sample_parser = subparsers.add_parser(
