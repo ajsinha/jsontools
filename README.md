@@ -1,9 +1,9 @@
-# JsonSchemaCodeGen v1.0.0
+# JsonSchemaCodeGen v1.1.0
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
-║                        JsonSchemaCodeGen v1.0.0                              ║
+║                        JsonSchemaCodeGen v1.1.0                              ║
 ║                                                                              ║
 ║            Commercial Grade JSON Schema to Python Code Generator             ║
 ║                                                                              ║
@@ -42,16 +42,33 @@ This software is proprietary and confidential. Unauthorized copying, distributio
 
 ## Key Features
 
+### Module Generation (Recommended)
+
+Generate complete, ready-to-use Python modules from schema folders:
+
+```bash
+python -m jsonschemacodegen generate-module \
+    --schema-dir schemas/ \
+    --output-dir output/ \
+    --module-name mymodels
+```
+
+Creates:
+```
+output/
+└── mymodels/                # Module folder inside output-dir
+    ├── __init__.py          # Main module exports
+    ├── __main__.py          # CLI support
+    ├── driver.py            # JSON utilities
+    ├── main.py              # High-level functions
+    └── generated/           # Generated dataclasses
+        ├── __init__.py
+        └── *.py
+```
+
 ### Code Generation
 
 Generate Python dataclasses with full type hints, serialization methods, and validation.
-
-### Module Generation
-
-Generate complete Python modules from a folder of JSON schemas with:
-- Driver code for JSON loading/saving
-- Class registry for dynamic instantiation
-- Proper `__init__.py` files
 
 ### Sample Data Generation
 
@@ -88,6 +105,39 @@ pip install .[dev]        # Development tools
 
 ## Quick Start
 
+### Generate Module from Schema Folder (Recommended)
+
+```bash
+# Generate module - creates output/mymodels/
+python -m jsonschemacodegen generate-module \
+    --schema-dir schemas/ \
+    --output-dir output/ \
+    --module-name mymodels
+```
+
+```python
+# Use the generated module
+import sys
+sys.path.insert(0, "output")
+
+from mymodels import User, Product, Order
+from mymodels import load_json, to_json, generate_sample
+
+# Load from JSON
+user = load_json("user.json", "User")
+
+# Generate sample data
+sample = generate_sample("User")
+
+# Create and save
+user = User(id_="123", name="John", email="john@example.com")
+to_json(user, "output/user.json")
+
+# Use CLI
+# python -m mymodels list
+# python -m mymodels sample User -o sample.json
+```
+
 ### Single Schema Processing
 
 ```python
@@ -114,33 +164,6 @@ print(code)
 samples = processor.generate_samples(count=3)
 ```
 
-### Module Generation (From Schema Folder)
-
-```python
-from jsonschemacodegen import generate_module
-
-# Generate complete Python module from schema folder
-result = generate_module(
-    schema_dir="schemas/",
-    output_dir="myapp/models/"
-)
-
-print(f"Generated {len(result['classes_generated'])} classes")
-```
-
-```python
-# Use the generated module
-from myapp.models import User, Product, Order
-from myapp.models import load_json, to_json
-
-# Load from JSON file
-user = load_json("user.json", User)
-
-# Create and serialize
-user = User(id="123", name="John", email="john@example.com")
-to_json(user, "output/user.json")
-```
-
 ### Command Line
 
 ```bash
@@ -150,13 +173,34 @@ python -m jsonschemacodegen generate -s schema.json -o models.py
 # Generate module from schema folder
 python -m jsonschemacodegen generate-module \
     --schema-dir schemas/ \
-    --output-dir myapp/models/
+    --output-dir output/ \
+    --module-name mymodels
 
 # Generate sample data
 python -m jsonschemacodegen sample -s schema.json -c 10 -o samples.json
 
 # Validate data
 python -m jsonschemacodegen validate -s schema.json -d data.json
+```
+
+---
+
+## Generated Module CLI
+
+The generated module includes its own CLI:
+
+```bash
+# List classes
+python -m mymodels list
+
+# Show class info
+python -m mymodels info User
+
+# Generate sample
+python -m mymodels sample User -o sample.json
+
+# Validate JSON
+python -m mymodels validate user.json User
 ```
 
 ---

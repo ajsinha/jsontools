@@ -17,7 +17,7 @@ Usage:
     jsonschemacodegen generate --schema schema.json --output models.py
     jsonschemacodegen sample --schema schema.json --count 5
     jsonschemacodegen validate --schema schema.json --data data.json
-    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir models/
+    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir output/
 """
 
 import argparse
@@ -53,17 +53,20 @@ Examples:
     jsonschemacodegen validate -s schema.json -d data.json
     
   Generate module from schema folder:
-    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir mymodule/
+    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir output/
+    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir output/ --module-name mymodels
     
   Analyze schema complexity:
     jsonschemacodegen info -s schema.json
+
+Copyright © 2025-2030, Ashutosh Sinha. All Rights Reserved.
 """,
     )
     
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 1.0.0",
+        version="%(prog)s 1.1.0",
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -107,11 +110,12 @@ Examples:
     mod_parser.add_argument(
         "--output-dir",
         required=True,
-        help="Path where the Python module will be created",
+        help="Path where the module will be created",
     )
     mod_parser.add_argument(
         "--module-name",
-        help="Name for the module (defaults to output-dir basename)",
+        default=None,
+        help="Name for the module (default: mymodule)",
     )
     mod_parser.add_argument(
         "--overwrite",
@@ -258,21 +262,27 @@ def cmd_generate_module(args) -> int:
         result = generator.generate()
         
         print(f"✓ Module generation complete!")
+        print(f"  Module name: {result['module_name']}")
+        print(f"  Module path: {result['module_path']}")
         print(f"  Schemas processed: {result['schemas_processed']}")
         print(f"  Classes generated: {len(result['classes_generated'])}")
         print(f"  Files created: {len(result['files_created'])}")
         
         if result['classes_generated']:
             print(f"\n  Generated classes:")
-            for class_name in sorted(result['classes_generated']):
+            for class_name in sorted(result['classes_generated'])[:10]:
                 print(f"    - {class_name}")
+            if len(result['classes_generated']) > 10:
+                print(f"    ... and {len(result['classes_generated']) - 10} more")
         
         if result['errors']:
             print(f"\n  Errors:")
             for error in result['errors']:
                 print(f"    ✗ {error}")
         
-        print(f"\n  Output directory: {args.output_dir}")
+        print(f"\n  Usage:")
+        print(f"    from {result['module_name']} import User, load_json, to_json")
+        print(f"    python -m {result['module_name']} --help")
         
         return 0 if not result['errors'] else 1
         

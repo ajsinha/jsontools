@@ -22,15 +22,11 @@ pip install .[all]
 
 ## 5-Minute Quick Start
 
-### Step 1: Import
+### Option 1: Single Schema Processing
 
 ```python
 from jsonschemacodegen import SchemaProcessor
-```
 
-### Step 2: Define Schema
-
-```python
 schema = {
     "type": "object",
     "title": "User",
@@ -38,21 +34,12 @@ schema = {
         "id": {"type": "string", "format": "uuid"},
         "name": {"type": "string", "minLength": 1},
         "email": {"type": "string", "format": "email"},
-        "age": {"type": "integer", "minimum": 0}
     },
     "required": ["id", "name", "email"]
 }
-```
 
-### Step 3: Create Processor
-
-```python
 processor = SchemaProcessor(schema, root_class_name="User")
-```
 
-### Step 4: Generate What You Need
-
-```python
 # Generate Python dataclass code
 code = processor.generate_code()
 print(code)
@@ -61,52 +48,100 @@ print(code)
 samples = processor.generate_samples(count=3)
 for sample in samples:
     print(sample)
-
-# Validate data
-data = {"id": "123e4567-e89b-12d3-a456-426614174000", "name": "John", "email": "john@example.com"}
-result = processor.validate_data(data)
-print(f"Valid: {result.is_valid}")
 ```
 
----
+### Option 2: Generate Module from Schema Folder (Recommended)
 
-## Generate Module from Schema Folder
+```bash
+# Command line
+python -m jsonschemacodegen generate-module \
+    --schema-dir schemas/ \
+    --output-dir output/ \
+    --module-name mymodels
+```
 
 ```python
+# Or in Python
 from jsonschemacodegen import generate_module
 
-# Generate complete Python module
 result = generate_module(
     schema_dir="schemas/",
-    output_dir="myapp/models/"
+    output_dir="output/",
+    module_name="mymodels"
 )
-
-print(f"Generated {len(result['classes_generated'])} classes")
+print(f"Created module at: {result['module_path']}")
 ```
 
 Then use the generated module:
 
 ```python
-from myapp.models import User, Product, load_json, to_json
+import sys
+sys.path.insert(0, "output")
+
+from mymodels import User, Product, load_json, to_json, generate_sample
 
 # Load from JSON file
-user = load_json("user.json", User)
+user = load_json("user.json", "User")
 
-# Serialize to JSON
-user = User(id="123", name="John", email="john@example.com")
+# Generate sample data
+sample = generate_sample("User")
+print(sample.name)
+
+# Create and save
+user = User(id_="123", name="John", email="john@example.com")
 to_json(user, "output/user.json")
 ```
 
 ---
 
-## CLI Usage
+## Generated Module Structure
+
+```
+output/
+└── mymodels/
+    ├── __init__.py      # Main exports
+    ├── __main__.py      # CLI entry point
+    ├── driver.py        # JSON utilities
+    ├── main.py          # High-level functions
+    └── generated/
+        ├── __init__.py
+        └── *.py         # Generated classes
+```
+
+---
+
+## Using the Generated Module CLI
 
 ```bash
-# Generate code from schema
+# List available classes
+python -m mymodels list
+
+# Show class info
+python -m mymodels info User
+
+# Generate sample data
+python -m mymodels sample User -o sample.json
+
+# Load and display JSON
+python -m mymodels load user.json User
+
+# Validate JSON
+python -m mymodels validate user.json User
+```
+
+---
+
+## CLI Commands
+
+```bash
+# Generate code from single schema
 python -m jsonschemacodegen generate -s schema.json -o models.py
 
 # Generate module from folder
-python -m jsonschemacodegen generate-module --schema-dir schemas/ --output-dir models/
+python -m jsonschemacodegen generate-module \
+    --schema-dir schemas/ \
+    --output-dir output/ \
+    --module-name mymodels
 
 # Generate sample data
 python -m jsonschemacodegen sample -s schema.json -c 10 -o samples.json

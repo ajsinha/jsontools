@@ -14,42 +14,45 @@ This document and the associated software architecture are proprietary and confi
 
 1. [Overview](#overview)
 2. [Quick Start](#quick-start)
-3. [Command Line Usage](#command-line-usage)
-4. [Programmatic Usage](#programmatic-usage)
-5. [Generated Module Structure](#generated-module-structure)
-6. [Driver Functions](#driver-functions)
-7. [Working with Generated Models](#working-with-generated-models)
-8. [Advanced Configuration](#advanced-configuration)
-9. [Best Practices](#best-practices)
-10. [Troubleshooting](#troubleshooting)
+3. [Generated Module Structure](#generated-module-structure)
+4. [Command Line Usage](#command-line-usage)
+5. [Programmatic Usage](#programmatic-usage)
+6. [Using the Generated Module](#using-the-generated-module)
+7. [Driver Functions](#driver-functions)
+8. [Main Module Functions](#main-module-functions)
+9. [CLI in Generated Module](#cli-in-generated-module)
+10. [Best Practices](#best-practices)
 
 ---
 
 ## Overview
 
-The **Module Generator** is a powerful feature of JsonSchemaCodeGen that creates a complete, ready-to-use Python module from a folder of JSON Schema files. 
+The **Module Generator** creates a complete, ready-to-use Python module from a folder of JSON Schema files.
 
 ### What It Creates
 
 ```
-output_module/
-├── __init__.py          # Main module with all exports
-├── driver.py            # JSON loading/saving utilities
-└── generated/
-    ├── __init__.py      # Generated classes exports
-    ├── user.py          # User dataclass
-    ├── product.py       # Product dataclass
-    ├── order.py         # Order dataclass
-    └── ...              # One file per schema
+output_dir/
+└── module_name/              # Default: "mymodule"
+    ├── __init__.py           # Main module with all exports
+    ├── __main__.py           # Enables python -m module_name
+    ├── driver.py             # JSON loading/saving utilities
+    ├── main.py               # High-level utility functions + CLI
+    └── generated/
+        ├── __init__.py       # Generated classes exports
+        ├── user.py           # User dataclass
+        ├── product.py        # Product dataclass
+        └── ...               # One file per schema
 ```
 
-### Key Benefits
+### Key Features
 
-- **Consistent Code**: All schemas processed with identical settings
-- **Ready to Use**: Generated module can be imported immediately
+- **Named Module**: Creates a properly named Python module inside the output directory
+- **Ready to Use**: Import and use immediately after generation
 - **Driver Utilities**: Built-in functions for JSON parsing and serialization
+- **Main Functions**: High-level functions for common operations
+- **CLI Support**: Run `python -m module_name` for command-line operations
 - **Class Registry**: Dynamic lookup of classes by name
-- **Type Safe**: Full type hints throughout
 
 ---
 
@@ -58,10 +61,16 @@ output_module/
 ### From Command Line
 
 ```bash
-# Generate module from schema folder
+# Generate module with default name (mymodule)
 python -m jsonschemacodegen generate-module \
     --schema-dir schemas/ \
-    --output-dir myapp/models/
+    --output-dir output/
+
+# Generate module with custom name
+python -m jsonschemacodegen generate-module \
+    --schema-dir schemas/ \
+    --output-dir output/ \
+    --module-name mymodels
 ```
 
 ### From Python
@@ -69,26 +78,39 @@ python -m jsonschemacodegen generate-module \
 ```python
 from jsonschemacodegen import generate_module
 
+# With default module name (mymodule)
 result = generate_module(
     schema_dir="schemas/",
-    output_dir="myapp/models/"
+    output_dir="output/"
 )
 
+# With custom module name
+result = generate_module(
+    schema_dir="schemas/",
+    output_dir="output/",
+    module_name="mymodels"
+)
+
+print(f"Module created at: {result['module_path']}")
 print(f"Generated {len(result['classes_generated'])} classes")
 ```
 
 ### Using the Generated Module
 
 ```python
-# Import models
-from myapp.models import User, Product, Order
+# Add output directory to path if needed
+import sys
+sys.path.insert(0, "output")
+
+# Import from generated module
+from mymodels import User, Product, Order
 
 # Import utilities
-from myapp.models import load_json, to_json, list_classes
+from mymodels import load_json, to_json, list_classes
 
 # Create an instance
 user = User(
-    id="123",
+    id_="123",
     name="John Doe",
     email="john@example.com"
 )
@@ -97,54 +119,111 @@ user = User(
 to_json(user, "output/user.json")
 
 # Load from JSON file
-loaded_user = load_json("output/user.json", User)
+loaded_user = load_json("output/user.json", "User")
+```
+
+---
+
+## Generated Module Structure
+
+### Directory Layout
+
+```
+output_dir/
+└── module_name/                    # e.g., "mymodule" or custom name
+    │
+    ├── __init__.py                 # Main module entry point
+    │   - Imports all generated classes
+    │   - Imports driver functions
+    │   - Imports main functions
+    │   - Exports everything via __all__
+    │
+    ├── __main__.py                 # Module entry point
+    │   - Enables: python -m module_name
+    │
+    ├── driver.py                   # Low-level utility functions
+    │   - load_json()               Load by class name
+    │   - load_json_file()          Load with class type
+    │   - load_json_string()        Parse JSON string
+    │   - load_dict()               Load from dictionary
+    │   - to_json()                 Save to file
+    │   - to_json_file()            Save to file (alias)
+    │   - to_json_string()          Serialize to string
+    │   - to_dict()                 Convert to dictionary
+    │   - list_classes()            List all classes
+    │   - get_class_info()          Get class metadata
+    │   - create_instance()         Create by class name
+    │   - validate_data()           Validate against class
+    │
+    ├── main.py                     # High-level functions + CLI
+    │   - load_and_parse()          Load and parse JSON
+    │   - create_and_save()         Create and save to JSON
+    │   - generate_sample()         Generate sample data
+    │   - convert_json()            Load, parse, and save
+    │   - run_cli()                 Command-line interface
+    │
+    └── generated/                  # Generated dataclasses
+        ├── __init__.py             # Exports all classes
+        │   - CLASS_REGISTRY        Dictionary of classes
+        │   - get_class()           Get class by name
+        │
+        ├── user.py                 # Individual dataclass files
+        ├── product.py
+        ├── order.py
+        └── ...
 ```
 
 ---
 
 ## Command Line Usage
 
-### Basic Command
+### Basic Usage
 
 ```bash
+# Default module name (mymodule)
 python -m jsonschemacodegen generate-module \
     --schema-dir <path-to-schemas> \
-    --output-dir <path-to-output>
+    --output-dir <output-directory>
+
+# Custom module name
+python -m jsonschemacodegen generate-module \
+    --schema-dir <path-to-schemas> \
+    --output-dir <output-directory> \
+    --module-name <module-name>
 ```
 
 ### Options
 
-| Option | Required | Description |
-|--------|----------|-------------|
-| `--schema-dir` | Yes | Path to directory containing JSON Schema files |
-| `--output-dir` | Yes | Path where the Python module will be created |
-| `--module-name` | No | Custom name for the module (default: output dir name) |
-| `--overwrite` | No | Overwrite existing files (default: True) |
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--schema-dir` | Yes | - | Path to directory containing JSON Schema files |
+| `--output-dir` | Yes | - | Path where the module folder will be created |
+| `--module-name` | No | mymodule | Name for the generated module |
+| `--overwrite` | No | True | Overwrite existing files |
 
 ### Examples
 
 ```bash
-# Basic usage
+# Generate with default name
 python -m jsonschemacodegen generate-module \
     --schema-dir ./schemas \
-    --output-dir ./myapp/models
+    --output-dir ./output
+# Creates: ./output/mymodule/
 
-# With custom module name
+# Generate with custom name
 python -m jsonschemacodegen generate-module \
     --schema-dir ./api/schemas \
-    --output-dir ./src/models \
+    --output-dir ./src \
     --module-name data_models
-
-# Process all schemas including subdirectories
-python -m jsonschemacodegen generate-module \
-    --schema-dir ./schemas \
-    --output-dir ./generated
+# Creates: ./src/data_models/
 ```
 
 ### Output
 
 ```
 ✓ Module generation complete!
+  Module name: mymodels
+  Module path: /path/to/output/mymodels
   Schemas processed: 22
   Classes generated: 22
   Files created: 47
@@ -155,11 +234,11 @@ python -m jsonschemacodegen generate-module \
     - BlogPost
     - Config
     - Event
-    - FinancialTransaction
-    - GameEntity
-    - ...
+    ...
 
-  Output directory: myapp/models/
+  Usage:
+    from mymodels import User, load_json, to_json
+    python -m mymodels --help
 ```
 
 ---
@@ -173,7 +252,8 @@ from jsonschemacodegen import generate_module
 
 result = generate_module(
     schema_dir="schemas/",
-    output_dir="myapp/models/"
+    output_dir="output/",
+    module_name="mymodels"  # Optional, defaults to "mymodule"
 )
 ```
 
@@ -184,23 +264,21 @@ from jsonschemacodegen import ModuleGenerator
 
 generator = ModuleGenerator(
     schema_dir="schemas/",
-    output_dir="myapp/models/",
-    module_name="models",
+    output_dir="output/",
+    module_name="mymodels",
     overwrite=True,
-    include_samples=True,
 )
 
 result = generator.generate()
 
 # Check results
-print(f"Processed: {result['schemas_processed']}")
+print(f"Module: {result['module_name']}")
+print(f"Path: {result['module_path']}")
 print(f"Classes: {result['classes_generated']}")
 print(f"Errors: {result['errors']}")
 ```
 
 ### Result Dictionary
-
-The `generate()` method returns a dictionary with:
 
 | Key | Type | Description |
 |-----|------|-------------|
@@ -208,478 +286,343 @@ The `generate()` method returns a dictionary with:
 | `classes_generated` | List[str] | Names of generated classes |
 | `files_created` | List[str] | Paths of all created files |
 | `errors` | List[str] | Any errors encountered |
+| `module_path` | str | Full path to generated module |
+| `module_name` | str | Name of the generated module |
 
 ---
 
-## Generated Module Structure
+## Using the Generated Module
 
-### Directory Layout
-
-```
-output_module/
-├── __init__.py              # Main module entry point
-│   - Imports all generated classes
-│   - Imports driver functions
-│   - Exports everything via __all__
-│
-├── driver.py                # Utility functions
-│   - load_json()            Load JSON file to dataclass
-│   - load_json_string()     Load JSON string to dataclass
-│   - load_dict()            Load dictionary to dataclass
-│   - to_json()              Save dataclass to JSON file
-│   - to_json_string()       Serialize to JSON string
-│   - to_dict()              Convert to dictionary
-│   - list_classes()         List all available classes
-│   - get_class_info()       Get class metadata
-│
-└── generated/               # Generated dataclasses
-    ├── __init__.py          # Exports all classes
-    │   - CLASS_REGISTRY     Dictionary of class_name -> class
-    │   - get_class()        Get class by name
-    │
-    ├── user.py              # Individual dataclass files
-    ├── product.py
-    ├── order.py
-    └── ...
-```
-
-### Import Examples
+### Importing
 
 ```python
 # Import specific classes
-from myapp.models import User, Product, Order
+from mymodule import User, Product, Order
 
 # Import all classes
-from myapp.models import *
+from mymodule import *
 
-# Import driver functions
-from myapp.models import load_json, to_json, list_classes
+# Import utilities
+from mymodule import load_json, to_json, list_classes
 
-# Import from generated submodule directly
-from myapp.models.generated import User
-from myapp.models.generated import CLASS_REGISTRY, get_class
+# Import high-level functions
+from mymodule import load_and_parse, create_and_save, generate_sample
+```
+
+### Creating Instances
+
+```python
+from mymodule import User, create_instance
+
+# Direct instantiation
+user = User(
+    id_="user-123",
+    name="John Doe",
+    email="john@example.com"
+)
+
+# Create by class name
+user = create_instance("User", 
+    id_="user-123",
+    name="John Doe",
+    email="john@example.com"
+)
+```
+
+### Loading from JSON
+
+```python
+from mymodule import load_json, load_and_parse
+
+# Load by class name
+user = load_json("user.json", "User")
+
+# Load with verbose output
+user = load_and_parse("user.json", "User", verbose=True)
+```
+
+### Saving to JSON
+
+```python
+from mymodule import to_json, create_and_save
+
+# Save instance to file
+to_json(user, "output/user.json")
+
+# Create and save in one call
+user = create_and_save(
+    "User",
+    "output/user.json",
+    id_="123",
+    name="John",
+    email="john@example.com"
+)
+```
+
+### Generating Sample Data
+
+```python
+from mymodule import generate_sample
+
+# Generate random sample
+sample_user = generate_sample("User")
+print(sample_user.name)  # Random name
+
+# With seed for reproducibility
+sample = generate_sample("User", seed=42)
 ```
 
 ---
 
 ## Driver Functions
 
-### Loading JSON Data
+### load_json(file_path, class_name)
 
-#### load_json(file_path, target_class)
-
-Load a JSON file into a dataclass instance.
+Load a JSON file into a class instance by class name.
 
 ```python
-from myapp.models import load_json, User
-
-user = load_json("data/user.json", User)
-print(user.name)  # Access fields
+user = load_json("data/user.json", "User")
 ```
 
-#### load_json_string(json_str, target_class)
+### load_json_file(file_path, target_class)
 
-Parse a JSON string into a dataclass instance.
+Load a JSON file into a class instance by class type.
 
 ```python
-from myapp.models import load_json_string, User
-
-json_data = '{"id": "123", "name": "John", "email": "john@example.com"}'
-user = load_json_string(json_data, User)
+from mymodule import User, load_json_file
+user = load_json_file("data/user.json", User)
 ```
 
-#### load_dict(data, target_class)
+### to_json(obj, file_path)
 
-Convert a dictionary to a dataclass instance.
-
-```python
-from myapp.models import load_dict, User
-
-data = {"id": "123", "name": "John", "email": "john@example.com"}
-user = load_dict(data, User)
-```
-
-#### load_by_class_name(data, class_name)
-
-Load data using class name as string (useful for dynamic loading).
+Save a class instance to a JSON file.
 
 ```python
-from myapp.models import load_by_class_name
-
-# From file path
-user = load_by_class_name("data/user.json", "User")
-
-# From JSON string
-user = load_by_class_name('{"name": "John"}', "User")
-
-# From dictionary
-user = load_by_class_name({"name": "John"}, "User")
-```
-
-### Serializing to JSON
-
-#### to_json(obj, file_path, indent=2)
-
-Save a dataclass instance to a JSON file.
-
-```python
-from myapp.models import to_json, User
-
-user = User(id="123", name="John", email="john@example.com")
 to_json(user, "output/user.json")
 ```
 
-#### to_json_string(obj, indent=2)
+### to_json_string(obj)
 
-Serialize a dataclass instance to a JSON string.
+Serialize a class instance to a JSON string.
 
 ```python
-from myapp.models import to_json_string, User
-
-user = User(id="123", name="John", email="john@example.com")
 json_str = to_json_string(user)
 print(json_str)
 ```
 
-#### to_dict(obj)
-
-Convert a dataclass instance to a dictionary.
-
-```python
-from myapp.models import to_dict, User
-
-user = User(id="123", name="John", email="john@example.com")
-data = to_dict(user)
-print(data)  # {'id': '123', 'name': 'John', 'email': 'john@example.com'}
-```
-
-### Utility Functions
-
-#### list_classes()
+### list_classes()
 
 Get a list of all available class names.
 
 ```python
-from myapp.models import list_classes
-
 classes = list_classes()
 print(classes)  # ['User', 'Product', 'Order', ...]
 ```
 
-#### get_class(name)
-
-Get a class by its name (for dynamic instantiation).
-
-```python
-from myapp.models import get_class
-
-UserClass = get_class("User")
-user = UserClass(id="123", name="John", email="john@example.com")
-```
-
-#### get_class_info(class_name)
+### get_class_info(class_name)
 
 Get metadata about a class.
 
 ```python
-from myapp.models import get_class_info
-
 info = get_class_info("User")
-print(info)
-# {
-#     'name': 'User',
-#     'fields': [
-#         {'name': 'id', 'type': 'str'},
-#         {'name': 'name', 'type': 'str'},
-#         {'name': 'email', 'type': 'str'},
-#     ],
-#     'docstring': 'User account information'
-# }
+print(info['fields'])  # Field information
+```
+
+### validate_data(data, class_name)
+
+Validate a dictionary against a class structure.
+
+```python
+result = validate_data({"name": "John"}, "User")
+if result["valid"]:
+    print("Valid!")
+else:
+    print("Errors:", result["errors"])
 ```
 
 ---
 
-## Working with Generated Models
+## Main Module Functions
 
-### Creating Instances
+### load_and_parse(file_path, class_name, verbose=False)
+
+Load and parse a JSON file with optional verbose output.
 
 ```python
-from myapp.models import User
+user = load_and_parse("user.json", "User", verbose=True)
+# Output: Loading user.json as User...
+#         Successfully loaded User instance
+```
 
-# Direct instantiation
-user = User(
-    id="user-123",
-    name="John Doe",
-    email="john@example.com",
-    age=30
+### create_and_save(class_name, output_path, **kwargs)
+
+Create a class instance and save it to JSON in one call.
+
+```python
+user = create_and_save(
+    "User",
+    "output/user.json",
+    verbose=True,
+    id_="123",
+    name="John",
+    email="john@example.com"
 )
-
-# From dictionary
-data = {"id": "user-123", "name": "John", "email": "john@example.com"}
-user = User(**data)
 ```
 
-### Accessing Fields
+### generate_sample(class_name, seed=None)
+
+Generate a sample instance with random data.
 
 ```python
-# Access fields directly
-print(user.name)
-print(user.email)
-
-# Iterate over fields
-from dataclasses import fields
-
-for field in fields(user):
-    print(f"{field.name}: {getattr(user, field.name)}")
+sample = generate_sample("User")
+print(sample.name)  # Random name like "Alice"
+print(sample.email)  # Random email like "user123@example.com"
 ```
 
-### Nested Objects
+### convert_json(input_path, output_path, class_name)
 
-The driver functions handle nested dataclasses automatically:
-
-```python
-# Schema with nested objects
-{
-    "type": "object",
-    "properties": {
-        "user": {"$ref": "#/definitions/User"},
-        "items": {"type": "array", "items": {"$ref": "#/definitions/Product"}}
-    }
-}
-
-# Loading nested data
-order_data = {
-    "user": {"id": "1", "name": "John"},
-    "items": [
-        {"id": "p1", "name": "Widget", "price": 9.99},
-        {"id": "p2", "name": "Gadget", "price": 19.99}
-    ]
-}
-
-order = load_dict(order_data, Order)
-print(order.user.name)       # "John"
-print(order.items[0].name)   # "Widget"
-```
-
-### Round-Trip Conversion
+Load JSON, parse through class, and save (validates and normalizes).
 
 ```python
-from myapp.models import User, load_json, to_json, to_json_string, load_json_string
-
-# Create instance
-user = User(id="123", name="John", email="john@example.com")
-
-# Convert to JSON string
-json_str = to_json_string(user)
-
-# Parse back to instance
-user2 = load_json_string(json_str, User)
-
-# Verify they're equal
-assert user.id == user2.id
-assert user.name == user2.name
+user = convert_json("input.json", "output.json", "User")
 ```
 
 ---
 
-## Advanced Configuration
+## CLI in Generated Module
 
-### Custom Module Name
+The generated module includes a command-line interface:
 
-```python
-result = generate_module(
-    schema_dir="schemas/",
-    output_dir="myapp/data/",
-    module_name="data_models"  # Custom name
-)
+```bash
+# Show help
+python -m mymodule --help
 
-# Usage:
-# from myapp.data import User  # Works!
-# from data_models import User  # Also works from the module directory
+# List available classes
+python -m mymodule list
+
+# Show class information
+python -m mymodule info User
+
+# Load and display JSON
+python -m mymodule load user.json User
+
+# Generate sample data
+python -m mymodule sample User
+python -m mymodule sample User -o sample_user.json
+python -m mymodule sample User -n 5 -o samples.json
+
+# Validate JSON against class
+python -m mymodule validate user.json User
 ```
 
-### Schema File Organization
+### CLI Commands
 
-The generator recursively processes all `.json` files:
-
-```
-schemas/
-├── core/
-│   ├── user.json
-│   └── product.json
-├── api/
-│   ├── request.json
-│   └── response.json
-└── definitions/
-    └── common.json
-```
-
-All schemas become classes in the same flat `generated/` directory.
-
-### Handling Duplicate Class Names
-
-If multiple schemas would generate the same class name, the generator automatically appends numbers:
-
-- `user.json` → `User`
-- `api/user.json` → `User2`
+| Command | Description |
+|---------|-------------|
+| `list` | List all available classes |
+| `info <class>` | Show information about a class |
+| `load <file> <class>` | Load and display JSON file |
+| `sample <class>` | Generate sample data |
+| `validate <file> <class>` | Validate JSON against class |
 
 ---
 
 ## Best Practices
 
-### 1. Organize Schemas by Domain
+### 1. Use Meaningful Module Names
+
+```bash
+# Good
+python -m jsonschemacodegen generate-module \
+    --schema-dir api/schemas \
+    --output-dir src \
+    --module-name api_models
+
+# Avoid
+python -m jsonschemacodegen generate-module \
+    --schema-dir schemas \
+    --output-dir output
+    # Creates "mymodule" - less descriptive
+```
+
+### 2. Organize Output by Project
 
 ```
-schemas/
-├── users/
-├── products/
-├── orders/
-└── common/
-    └── definitions.json
+project/
+├── src/
+│   ├── api_models/          # Generated from API schemas
+│   ├── db_models/           # Generated from DB schemas
+│   └── app/
+│       └── ...
+└── schemas/
+    ├── api/
+    └── database/
 ```
 
-### 2. Use Meaningful Titles
+### 3. Add Output Directory to Python Path
+
+```python
+import sys
+sys.path.insert(0, "output")
+
+from mymodels import User
+```
+
+Or use package installation:
+
+```bash
+cd output/mymodels
+pip install -e .
+```
+
+### 4. Use Schema Titles
 
 ```json
 {
     "title": "CustomerOrder",
-    "description": "Represents a customer's order"
+    "type": "object"
 }
 ```
 
-The `title` field is used as the class name.
-
-### 3. Define Common Types in Definitions
-
-```json
-{
-    "definitions": {
-        "Money": {
-            "type": "object",
-            "properties": {
-                "amount": {"type": "number"},
-                "currency": {"type": "string"}
-            }
-        }
-    }
-}
-```
-
-### 4. Version Your Generated Code
-
-Include generation in your build process:
-
-```python
-# scripts/generate_models.py
-from jsonschemacodegen import generate_module
-
-result = generate_module(
-    schema_dir="api/schemas/",
-    output_dir="src/models/"
-)
-
-with open("src/models/VERSION", "w") as f:
-    f.write(f"Generated: {datetime.now().isoformat()}\n")
-    f.write(f"Schemas: {result['schemas_processed']}\n")
-```
+The `title` field becomes the class name.
 
 ### 5. Don't Edit Generated Files
 
 Generated files include a warning:
-
 ```python
-"""
-DO NOT EDIT THIS FILE MANUALLY - Changes will be overwritten.
-"""
+# DO NOT EDIT - Changes will be overwritten.
 ```
 
-If you need custom logic, create wrapper classes in a separate file.
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-#### "No schema files found"
-
-```
-Error: No schema files found in schemas/
-```
-
-**Solution**: Ensure the schema directory contains `.json` files:
-```bash
-ls schemas/*.json
-```
-
-#### "File not found" when loading JSON
-
-```python
-FileNotFoundError: File not found: user.json
-```
-
-**Solution**: Use absolute paths or check working directory:
-```python
-from pathlib import Path
-
-file_path = Path(__file__).parent / "data" / "user.json"
-user = load_json(file_path, User)
-```
-
-#### "Not a dataclass" error
-
-```
-TypeError: User is not a dataclass
-```
-
-**Solution**: Ensure you're importing from the generated module:
-```python
-# Wrong
-from myapp.models.driver import User
-
-# Correct
-from myapp.models import User
-```
-
-#### Duplicate class names
-
-If you see `User`, `User2`, `User3`:
-
-**Solution**: Add unique `title` fields to your schemas:
-```json
-{
-    "title": "CustomerUser",
-    ...
-}
-```
-
-### Getting Help
-
-1. Check schema validation: `python -m jsonschemacodegen validate -s schema.json`
-2. Review the generation output for errors
-3. Ensure all `$ref` references are resolvable
+Create wrapper classes in separate files if needed.
 
 ---
 
 ## Summary
 
-The Module Generator provides a complete solution for converting JSON Schema folders into usable Python modules:
+The Module Generator provides:
 
-1. **One Command**: Generate entire module from schema folder
-2. **Ready to Use**: Import and use immediately
-3. **Full Utilities**: Built-in JSON loading and serialization
-4. **Type Safe**: Dataclasses with type hints
-5. **Extensible**: Class registry for dynamic usage
+1. **Complete Module**: Named Python module with all necessary files
+2. **Ready to Use**: Import classes and utilities immediately
+3. **Driver Functions**: Low-level JSON operations
+4. **Main Functions**: High-level utilities for common tasks
+5. **CLI Support**: Command-line interface in the generated module
+6. **Type Safe**: Full type hints and dataclass support
 
-```python
+```bash
 # Generate
-from jsonschemacodegen import generate_module
-generate_module("schemas/", "myapp/models/")
+python -m jsonschemacodegen generate-module \
+    --schema-dir schemas/ \
+    --output-dir output/ \
+    --module-name mymodels
 
-# Use
-from myapp.models import User, load_json, to_json
-user = load_json("user.json", User)
-to_json(user, "output.json")
+# Use in Python
+from mymodels import User, load_json, to_json, generate_sample
+user = load_json("user.json", "User")
+sample = generate_sample("User")
+
+# Use CLI
+python -m mymodels list
+python -m mymodels sample User -o sample.json
 ```
 
 ---
