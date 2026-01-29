@@ -66,7 +66,7 @@ Copyright (C) 2025-2030, Ashutosh Sinha. All Rights Reserved.
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 1.2.0",
+        version="%(prog)s 1.2.1",
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Command to run")

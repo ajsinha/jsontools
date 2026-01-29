@@ -244,9 +244,18 @@ class ReferenceResolver:
         Returns:
             The schema document
         """
-        # Resolve relative URIs
-        if self.base_uri and not self._is_absolute_uri(uri):
-            uri = urljoin(self.base_uri, uri)
+        # Resolve relative file references using os.path (not urljoin which is for URLs)
+        if self.base_uri and not self._is_absolute_uri(uri) and not self._is_remote_uri(uri):
+            # For file references like "Bond.json", resolve relative to base_uri directory
+            base_path = self.base_uri
+            # Handle file:// URIs
+            if base_path.startswith("file://"):
+                base_path = base_path[7:]
+            # Get directory of the base file
+            base_dir = os.path.dirname(base_path)
+            if base_dir:
+                uri = os.path.join(base_dir, uri)
+                uri = os.path.normpath(uri)
         
         # Check schema store
         if uri in self.schema_store:
@@ -266,9 +275,14 @@ class ReferenceResolver:
         return schema
     
     def _is_absolute_uri(self, uri: str) -> bool:
-        """Check if a URI is absolute."""
+        """Check if a URI is absolute (URL or absolute file path)."""
+        # Check for remote URLs first
         parsed = urlparse(uri)
-        return bool(parsed.scheme) or uri.startswith("/")
+        if parsed.scheme in ("http", "https", "file"):
+            return True
+        # For file paths, use os.path.isabs
+        # This handles both Unix (/path/to/file) and Windows (C:\path\to\file)
+        return os.path.isabs(uri)
     
     def _is_remote_uri(self, uri: str) -> bool:
         """Check if a URI is a remote HTTP(S) URI."""
@@ -296,24 +310,6 @@ class ReferenceResolver:
         # Handle file:// URIs
         if uri.startswith("file://"):
             uri = uri[7:]
-        
-        # Resolve relative to base URI if needed
-        if self.base_uri and not os.path.isabs(uri):
-            # Handle base_uri as file path or URI
-            base_path = self.base_uri
-            if base_path.startswith("file://"):
-                base_path = base_path[7:]
-            
-            # If base_uri looks like a URL, extract path
-            parsed = urlparse(base_path)
-            if parsed.scheme and parsed.scheme != "file":
-                base_path = parsed.path
-            
-            # If base_path is a file, get its directory
-            if os.path.isfile(base_path):
-                base_path = os.path.dirname(base_path)
-            
-            uri = os.path.join(base_path, uri)
         
         # Normalize the path
         uri = os.path.normpath(uri)

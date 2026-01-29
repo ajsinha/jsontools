@@ -38,7 +38,7 @@ Usage:
     generate_module("schemas/", "myapp/models")
 """
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 __author__ = "Ashutosh Sinha"
 __email__ = "ajsinha@gmail.com"
 
