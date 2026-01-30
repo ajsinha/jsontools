@@ -1,0 +1,314 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.example.com/schemas/order/v2",
+  "title": "Modern Order API Schema v2",
+  "description": "Modern e-commerce order format for API v2",
+  "type": "object",
+  "required": ["orderId", "orderDate", "status", "customer", "items", "totals"],
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "description": "Unique order identifier"
+    },
+    "orderNumber": {
+      "type": "string",
+      "description": "Human-readable order number"
+    },
+    "orderDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 order timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["STANDARD", "EXPRESS", "PRIORITY"]
+    },
+    "channel": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["WEB", "MOBILE", "STORE", "PHONE", "API"] },
+        "storeId": { "type": "string" },
+        "terminalId": { "type": "string" },
+        "associateId": { "type": "string" }
+      }
+    },
+    "flags": {
+      "type": "object",
+      "properties": {
+        "isGift": { "type": "boolean" },
+        "isPriority": { "type": "boolean" },
+        "isTaxExempt": { "type": "boolean" },
+        "requiresSignature": { "type": "boolean" }
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "customer": {
+      "type": "object",
+      "required": ["customerId", "profile"],
+      "properties": {
+        "customerId": { "type": "string" },
+        "customerType": { "type": "string", "enum": ["INDIVIDUAL", "BUSINESS", "GOVERNMENT"] },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string" },
+            "firstName": { "type": "string" },
+            "middleName": { "type": "string" },
+            "lastName": { "type": "string" },
+            "suffix": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "dateOfBirth": { "type": "string", "format": "date" },
+            "age": { "type": "integer" },
+            "gender": { "type": "string", "enum": ["MALE", "FEMALE", "OTHER", "UNSPECIFIED"] },
+            "taxId": { "type": "string" }
+          }
+        },
+        "contact": {
+          "type": "object",
+          "properties": {
+            "primaryPhone": { "type": "string" },
+            "secondaryPhone": { "type": "string" },
+            "phoneType": { "type": "string", "enum": ["MOBILE", "HOME", "WORK"] },
+            "preferredMethod": { "type": "string", "enum": ["EMAIL", "PHONE", "SMS"] }
+          }
+        },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "language": { "type": "string" },
+            "currency": { "type": "string" },
+            "marketingOptIn": { "type": "boolean" },
+            "smsOptIn": { "type": "boolean" }
+          }
+        },
+        "loyalty": {
+          "type": "object",
+          "properties": {
+            "memberId": { "type": "string" },
+            "tier": { "type": "string", "enum": ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"] },
+            "points": { "type": "integer" },
+            "lifetimeValue": { "type": "number" },
+            "tierExpirationDate": { "type": "string", "format": "date" }
+          }
+        },
+        "account": {
+          "type": "object",
+          "properties": {
+            "balance": { "type": "number" },
+            "creditLimit": { "type": "number" },
+            "creditAvailable": { "type": "number" }
+          }
+        }
+      }
+    },
+    "addresses": {
+      "type": "object",
+      "properties": {
+        "billing": { "$ref": "#/definitions/address" },
+        "shipping": { "$ref": "#/definitions/address" }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/lineItem" }
+    },
+    "payments": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/payment" }
+    },
+    "totals": {
+      "type": "object",
+      "properties": {
+        "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "tax": { "type": "number" },
+        "shipping": { "type": "number" },
+        "handling": { "type": "number" },
+        "giftWrap": { "type": "number" },
+        "warranty": { "type": "number" },
+        "grandTotal": { "type": "number" },
+        "paid": { "type": "number" },
+        "due": { "type": "number" },
+        "currency": { "type": "string" },
+        "itemCount": { "type": "integer" },
+        "totalQuantity": { "type": "integer" },
+        "totalWeight": { "type": "number" },
+        "totalSavings": { "type": "number" },
+        "effectiveTaxRate": { "type": "number" },
+        "profitMargin": { "type": "number" }
+      }
+    },
+    "shipping": {
+      "type": "object",
+      "properties": {
+        "method": { "type": "string" },
+        "carrier": { "type": "string" },
+        "speed": { "type": "string" },
+        "estimatedDelivery": { "type": "string", "format": "date" },
+        "actualDelivery": { "type": "string", "format": "date" },
+        "trackingNumbers": { "type": "array", "items": { "type": "string" } },
+        "packageCount": { "type": "integer" },
+        "totalWeight": { "type": "number" },
+        "insuranceAmount": { "type": "number" }
+      }
+    },
+    "promotions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "description": { "type": "string" },
+          "type": { "type": "string" },
+          "savings": { "type": "number" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "apiVersion": { "type": "string" },
+        "transformedAt": { "type": "string", "format": "date-time" },
+        "transformationId": { "type": "string" },
+        "sourceSystem": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "definitions": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["BILLING", "SHIPPING", "BOTH"] },
+        "line1": { "type": "string" },
+        "line2": { "type": "string" },
+        "line3": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "country": { "type": "string" },
+        "countryName": { "type": "string" },
+        "formatted": { "type": "string" },
+        "isValidated": { "type": "boolean" },
+        "isResidential": { "type": "boolean" },
+        "specialInstructions": { "type": "string" }
+      }
+    },
+    "lineItem": {
+      "type": "object",
+      "properties": {
+        "lineNumber": { "type": "integer" },
+        "sku": { "type": "string" },
+        "upc": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "subcategory": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "variant": {
+          "type": "object",
+          "properties": {
+            "color": { "type": "string" },
+            "size": { "type": "string" }
+          }
+        },
+        "quantity": {
+          "type": "object",
+          "properties": {
+            "ordered": { "type": "integer" },
+            "shipped": { "type": "integer" },
+            "backordered": { "type": "integer" }
+          }
+        },
+        "pricing": {
+          "type": "object",
+          "properties": {
+            "unitPrice": { "type": "number" },
+            "unitCost": { "type": "number" },
+            "discountPercent": { "type": "number" },
+            "discountAmount": { "type": "number" },
+            "extendedPrice": { "type": "number" },
+            "taxRate": { "type": "number" },
+            "taxAmount": { "type": "number" },
+            "profitMargin": { "type": "number" }
+          }
+        },
+        "fulfillment": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string" },
+            "shipDate": { "type": "string", "format": "date" },
+            "trackingNumber": { "type": "string" },
+            "carrier": { "type": "string" }
+          }
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "weight": { "type": "number" },
+            "isHazmat": { "type": "boolean" },
+            "serialNumber": { "type": "string" },
+            "lotNumber": { "type": "string" }
+          }
+        },
+        "gift": {
+          "type": "object",
+          "properties": {
+            "isGiftWrapped": { "type": "boolean" },
+            "message": { "type": "string" }
+          }
+        },
+        "warranty": {
+          "type": "object",
+          "properties": {
+            "sku": { "type": "string" },
+            "price": { "type": "number" }
+          }
+        }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "properties": {
+        "sequence": { "type": "integer" },
+        "method": { "type": "string", "enum": ["CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "APPLE_PAY", "GOOGLE_PAY", "LOYALTY_POINTS", "GIFT_CARD", "STORE_CREDIT"] },
+        "amount": { "type": "number" },
+        "card": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "lastFour": { "type": "string" },
+            "expiration": { "type": "string" },
+            "holderName": { "type": "string" }
+          }
+        },
+        "transaction": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "authCode": { "type": "string" },
+            "authDate": { "type": "string", "format": "date" },
+            "captureDate": { "type": "string", "format": "date" }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "properties": {
+            "avsResult": { "type": "string" },
+            "cvvResult": { "type": "string" },
+            "addressMatch": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

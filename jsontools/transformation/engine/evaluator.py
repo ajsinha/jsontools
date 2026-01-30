@@ -141,7 +141,7 @@ class ExpressionEvaluator:
                         self.external_functions[name] = method
     
     def get_value(self, path: str, data: Dict[str, Any] = None) -> Any:
-        """Get a value from the data using a dotted path."""
+        """Get a value from the data using a dotted path with array support."""
         if data is None:
             data = self.context
         
@@ -150,6 +150,10 @@ class ExpressionEvaluator:
         
         if path.startswith("."):
             path = path[1:]
+        
+        # Handle array wildcard paths like items[*].name
+        if "[*]" in path:
+            return self._get_array_values(path, data)
         
         segments = self._parse_path(path)
         current = data
@@ -171,16 +175,61 @@ class ExpressionEvaluator:
                     return current
                 return None
             else:
-                if isinstance(current, dict):
+                # Check for embedded array index like items[0]
+                match = re.match(r'^([^\[]+)\[(\d+)\]$', str(segment))
+                if match:
+                    base = match.group(1)
+                    idx = int(match.group(2))
+                    if isinstance(current, dict):
+                        current = current.get(base)
+                        if isinstance(current, list) and -len(current) <= idx < len(current):
+                            current = current[idx]
+                        else:
+                            return None
+                    else:
+                        return None
+                elif isinstance(current, dict):
                     current = current.get(segment)
                 else:
                     return None
         
         return current
     
+    def _get_array_values(self, path: str, data: Dict[str, Any]) -> List[Any]:
+        """Get values from array using wildcard notation like items[*].name."""
+        # Split at [*]
+        parts = path.split("[*]", 1)
+        array_path = parts[0]
+        suffix = parts[1].lstrip(".") if len(parts) > 1 and parts[1] else ""
+        
+        # Get the array
+        array = self.get_value(array_path, data)
+        if not isinstance(array, list):
+            return []
+        
+        # If no suffix, return the array as is
+        if not suffix:
+            return array
+        
+        # Extract values from each item
+        result = []
+        for item in array:
+            if isinstance(item, dict):
+                val = self.get_value(suffix, item)
+                result.append(val)
+            else:
+                result.append(item)
+        
+        return result
+    
     def set_value(self, path: str, value: Any, data: Dict[str, Any]) -> None:
-        """Set a value in the data using a dotted path."""
+        """Set a value in the data using a dotted path, handling array wildcards."""
         segments = self._parse_path(path)
+        
+        # Check if this is an array wildcard mapping
+        if "*" in segments:
+            self._set_array_value(segments, value, data)
+            return
         
         current = data
         for i, segment in enumerate(segments[:-1]):
@@ -190,12 +239,10 @@ class ExpressionEvaluator:
                 if current[segment] is None:
                     current[segment] = {}
                 current = current[segment]
-            elif segment == "*":
-                continue
             else:
                 if segment not in current or current[segment] is None:
                     next_seg = segments[i + 1] if i + 1 < len(segments) else None
-                    if isinstance(next_seg, int) or next_seg == "*":
+                    if isinstance(next_seg, int):
                         current[segment] = []
                     else:
                         current[segment] = {}
@@ -206,8 +253,65 @@ class ExpressionEvaluator:
             while len(current) <= final_segment:
                 current.append(None)
             current[final_segment] = value
-        elif final_segment != "*":
+        else:
             current[final_segment] = value
+    
+    def _set_array_value(self, segments: List[Any], value: Any, data: Dict[str, Any]) -> None:
+        """Handle setting values with array wildcards like items[*].name."""
+        # Find the wildcard position
+        star_idx = segments.index("*")
+        
+        # Segments before the wildcard (e.g., ['items'])
+        before = segments[:star_idx]
+        # Segments after the wildcard (e.g., ['name'])
+        after = segments[star_idx + 1:]
+        
+        # Navigate to the array container
+        current = data
+        for segment in before:
+            if segment not in current:
+                current[segment] = []
+            current = current[segment]
+        
+        # Ensure we have a list
+        if not isinstance(current, list):
+            return
+        
+        # If value is a list, map each value to array elements
+        if isinstance(value, list):
+            # Extend the array if needed
+            while len(current) < len(value):
+                current.append({})
+            
+            # Set each value
+            for i, val in enumerate(value):
+                if after:
+                    # Navigate nested path and set value
+                    target = current[i]
+                    if not isinstance(target, dict):
+                        current[i] = {}
+                        target = current[i]
+                    
+                    for j, seg in enumerate(after[:-1]):
+                        if seg not in target:
+                            target[seg] = {}
+                        target = target[seg]
+                    
+                    target[after[-1]] = val
+                else:
+                    current[i] = val
+        else:
+            # Single value - append or set
+            if after:
+                new_item = {}
+                target = new_item
+                for j, seg in enumerate(after[:-1]):
+                    target[seg] = {}
+                    target = target[seg]
+                target[after[-1]] = value
+                current.append(new_item)
+            else:
+                current.append(value)
     
     def _parse_path(self, path: str) -> List[Any]:
         """Parse a path string into segments."""

@@ -470,7 +470,7 @@ class SchemaMapParser:
         return None
     
     def _parse_path(self) -> SourcePath:
-        """Parse a dotted path."""
+        """Parse a dotted path with optional array notation anywhere."""
         segments = []
         is_optional = False
         array_access = None
@@ -479,30 +479,45 @@ class SchemaMapParser:
             self._advance()
             segments.append("")
         
+        # Parse first segment
         if self._check(TokenType.IDENTIFIER):
             segments.append(self._advance().value)
         
-        while self._check(TokenType.DOT):
-            self._advance()
-            if self._check(TokenType.IDENTIFIER):
-                segments.append(self._advance().value)
-            elif self._check(TokenType.STAR):
-                segments.append("*")
+        # Continue parsing segments and array accesses
+        while True:
+            # Check for array access [*] or [0]
+            if self._check(TokenType.LBRACKET):
                 self._advance()
+                if self._check(TokenType.STAR):
+                    # Append [*] to last segment
+                    if segments:
+                        segments[-1] = segments[-1] + "[*]"
+                    self._advance()
+                elif self._check(TokenType.NUMBER):
+                    idx = str(self._advance().value)
+                    if segments:
+                        segments[-1] = segments[-1] + f"[{idx}]"
+                elif self._check(TokenType.MINUS):
+                    self._advance()
+                    num = self._expect(TokenType.NUMBER).value
+                    if segments:
+                        segments[-1] = segments[-1] + f"[-{num}]"
+                self._expect(TokenType.RBRACKET)
+            
+            # Check for dot continuation
+            if self._check(TokenType.DOT):
+                self._advance()
+                if self._check(TokenType.IDENTIFIER):
+                    segments.append(self._advance().value)
+                elif self._check(TokenType.STAR):
+                    segments.append("*")
+                    self._advance()
+                else:
+                    break
+            else:
+                break
         
-        if self._check(TokenType.LBRACKET):
-            self._advance()
-            if self._check(TokenType.STAR):
-                array_access = "*"
-                self._advance()
-            elif self._check(TokenType.NUMBER):
-                array_access = str(self._advance().value)
-            elif self._check(TokenType.MINUS):
-                self._advance()
-                num = self._expect(TokenType.NUMBER).value
-                array_access = f"-{num}"
-            self._expect(TokenType.RBRACKET)
-        
+        # Check for optional marker
         if self._check(TokenType.QUESTION):
             self._advance()
             is_optional = True
@@ -526,7 +541,7 @@ class SchemaMapParser:
         return MergeExpression(parts=parts, operator=operator)
     
     def _parse_target(self) -> Union[TargetPath, SkipTarget]:
-        """Parse the target side of a mapping."""
+        """Parse the target side of a mapping with optional array notation."""
         if self._check(TokenType.TILDE):
             self._advance()
             return SkipTarget()
@@ -534,22 +549,34 @@ class SchemaMapParser:
         segments = []
         array_access = None
         
+        # Parse first segment
         if self._check(TokenType.IDENTIFIER):
             segments.append(self._advance().value)
         
-        while self._check(TokenType.DOT):
-            self._advance()
-            if self._check(TokenType.IDENTIFIER):
-                segments.append(self._advance().value)
-        
-        if self._check(TokenType.LBRACKET):
-            self._advance()
-            if self._check(TokenType.STAR):
-                array_access = "*"
+        # Continue parsing segments and array accesses
+        while True:
+            # Check for array access [*] or [0]
+            if self._check(TokenType.LBRACKET):
                 self._advance()
-            elif self._check(TokenType.NUMBER):
-                array_access = str(self._advance().value)
-            self._expect(TokenType.RBRACKET)
+                if self._check(TokenType.STAR):
+                    if segments:
+                        segments[-1] = segments[-1] + "[*]"
+                    self._advance()
+                elif self._check(TokenType.NUMBER):
+                    idx = str(self._advance().value)
+                    if segments:
+                        segments[-1] = segments[-1] + f"[{idx}]"
+                self._expect(TokenType.RBRACKET)
+            
+            # Check for dot continuation
+            if self._check(TokenType.DOT):
+                self._advance()
+                if self._check(TokenType.IDENTIFIER):
+                    segments.append(self._advance().value)
+                else:
+                    break
+            else:
+                break
         
         return TargetPath(segments=segments, array_access=array_access)
     

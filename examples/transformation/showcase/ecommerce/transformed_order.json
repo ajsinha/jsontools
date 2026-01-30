@@ -1,0 +1,325 @@
+{
+  "orderId": "ORD-2B767D9E",
+  "orderNumber": "ORD-2024-78523",
+  "orderDate": "2024-12-15T14:35:22Z",
+  "status": "SHIPPED",
+  "priority": "PRIORITY",
+  "notes": "Please leave at back door. Customer requested fragile handling.",
+  "channel": {
+    "type": "WEB",
+    "storeId": "STORE-001",
+    "terminalId": "T-15",
+    "associateId": "EMP-4521"
+  },
+  "flags": {
+    "isGift": false,
+    "isPriority": true,
+    "isTaxExempt": false,
+    "requiresSignature": true
+  },
+  "customer": {
+    "customerId": "CUST-98765",
+    "customerType": "INDIVIDUAL",
+    "profile": {
+      "fullName": "Jennifer Marie Smith-Johnson III",
+      "firstName": "Jennifer",
+      "middleName": "Marie",
+      "lastName": "Smith-Johnson",
+      "suffix": "III",
+      "email": "jennifer.smith@example.com",
+      "dateOfBirth": "1985-06-15",
+      "age": 40,
+      "gender": "FEMALE",
+      "taxId": "XXX-XX-6789"
+    },
+    "contact": {
+      "primaryPhone": "+1 (212) 555-1234",
+      "secondaryPhone": "+1 (917) 555-9876",
+      "phoneType": "MOBILE",
+      "preferredMethod": "EMAIL"
+    },
+    "preferences": {
+      "language": "EN",
+      "currency": "USD",
+      "marketingOptIn": true,
+      "smsOptIn": false
+    },
+    "loyalty": {
+      "memberId": "LYL-456789",
+      "tier": "GOLD",
+      "points": 15750,
+      "lifetimeValue": 28945.67,
+      "tierExpirationDate": "2027-02-24"
+    },
+    "account": {
+      "balance": -125.5,
+      "creditLimit": 5000.0,
+      "creditAvailable": 4874.5
+    }
+  },
+  "addresses": {
+    "billing": {
+      "type": "BILLING",
+      "line1": "123 Main Street",
+      "line2": "Apt 4B",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10001",
+      "country": "US",
+      "countryName": "United States",
+      "formatted": "123 Main Street, Apt 4B, New York, NY 10001",
+      "isValidated": true,
+      "isResidential": true
+    },
+    "shipping": {
+      "type": "SHIPPING",
+      "line1": "456 Oak Avenue",
+      "line2": "Suite 200",
+      "line3": "Building C",
+      "city": "Brooklyn",
+      "state": "NY",
+      "postalCode": "11201",
+      "country": "US",
+      "countryName": "United States",
+      "formatted": "456 Oak Avenue, Suite 200, Building C, Brooklyn, NY 11201",
+      "isValidated": true,
+      "isResidential": false,
+      "specialInstructions": "Ring bell twice, ask for receiving"
+    }
+  },
+  "items": [
+    {
+      "lineNumber": 1,
+      "sku": "ELEC-TV-55-4K",
+      "upc": "012345678901",
+      "name": "55 Inch 4K Smart Tv",
+      "description": "55 INCH 4K SMART TV",
+      "category": "ELEC",
+      "subcategory": "TV",
+      "brand": "Samsonic",
+      "model": "SN-55X4K",
+      "variant": {
+        "color": "Black",
+        "size": ""
+      },
+      "quantity": {
+        "ordered": 1,
+        "shipped": 1,
+        "backordered": 0
+      },
+      "pricing": {
+        "unitPrice": 799.99,
+        "unitCost": 450.0,
+        "discountPercent": 10.0,
+        "discountAmount": 80.0,
+        "extendedPrice": 719.99,
+        "taxRate": 8.875,
+        "taxAmount": 63.9
+      },
+      "fulfillment": {
+        "status": "SHIPPED",
+        "trackingNumber": "1Z999AA10123456784",
+        "carrier": "UPS"
+      },
+      "attributes": {
+        "weight": 45.5,
+        "isHazmat": false,
+        "serialNumber": "SN-2024-78901"
+      },
+      "gift": {
+        "isGiftWrapped": false,
+        "message": ""
+      },
+      "warranty": {
+        "sku": "WARR-3YR-TV",
+        "price": 99.99
+      }
+    },
+    {
+      "lineNumber": 2,
+      "sku": "ELEC-SOUND-BAR",
+      "upc": "012345678902",
+      "name": "Wireless Sound Bar With Subwoofer",
+      "description": "WIRELESS SOUND BAR WITH SUBWOOFER",
+      "category": "ELEC",
+      "subcategory": "AUDIO",
+      "brand": "Samsonic",
+      "model": "SN-SB500",
+      "variant": {
+        "color": "Black",
+        "size": ""
+      },
+      "quantity": {
+        "ordered": 1,
+        "shipped": 1,
+        "backordered": 0
+      },
+      "pricing": {
+        "unitPrice": 299.99,
+        "unitCost": 150.0,
+        "discountPercent": 15.0,
+        "discountAmount": 45.0,
+        "extendedPrice": 254.99,
+        "taxRate": 8.875,
+        "taxAmount": 22.63
+      },
+      "fulfillment": {
+        "status": "SHIPPED",
+        "trackingNumber": "1Z999AA10123456784",
+        "carrier": "UPS"
+      },
+      "attributes": {
+        "weight": 12.3,
+        "isHazmat": false,
+        "serialNumber": "SN-2024-78902"
+      },
+      "gift": {
+        "isGiftWrapped": false,
+        "message": ""
+      },
+      "warranty": {
+        "price": 0.0
+      }
+    },
+    {
+      "lineNumber": 3,
+      "sku": "CABLE-HDMI-6FT",
+      "upc": "012345678903",
+      "name": "Premium Hdmi Cable 6 Feet",
+      "description": "PREMIUM HDMI CABLE 6 FEET",
+      "category": "ACCS",
+      "subcategory": "CABLES",
+      "brand": "Techcord",
+      "model": "TC-HDMI-6",
+      "variant": {
+        "color": "",
+        "size": "6FT"
+      },
+      "quantity": {
+        "ordered": 2,
+        "shipped": 2,
+        "backordered": 0
+      },
+      "pricing": {
+        "unitPrice": 24.99,
+        "unitCost": 8.0,
+        "discountPercent": 0.0,
+        "discountAmount": 0.0,
+        "extendedPrice": 49.98,
+        "taxRate": 8.875,
+        "taxAmount": 4.44
+      },
+      "fulfillment": {
+        "status": "SHIPPED",
+        "trackingNumber": "1Z999AA10123456784",
+        "carrier": "UPS"
+      },
+      "attributes": {
+        "weight": 0.5,
+        "isHazmat": false,
+        "lotNumber": "LOT-2024-Q4-001"
+      },
+      "gift": {
+        "isGiftWrapped": true,
+        "message": "Happy Holidays from the Smiths!"
+      },
+      "warranty": {
+        "price": 0.0
+      }
+    }
+  ],
+  "payments": [
+    {
+      "sequence": 1,
+      "method": "CREDIT_CARD",
+      "amount": 1000.0,
+      "card": {
+        "type": "VISA",
+        "lastFour": "4242",
+        "expiration": "12/26",
+        "holderName": "JENNIFER M SMITH-JOHNSON"
+      },
+      "transaction": {
+        "id": "TXN-789456123",
+        "authCode": "AUTH123456"
+      },
+      "verification": {
+        "avsResult": "Y",
+        "cvvResult": "M",
+        "addressMatch": true
+      }
+    },
+    {
+      "sequence": 2,
+      "method": "LOYALTY_POINTS",
+      "amount": 157.5,
+      "card": {
+        "type": "",
+        "holderName": ""
+      },
+      "transaction": {
+        "id": "LYL-REDEEM-456"
+      },
+      "verification": {
+        "addressMatch": false
+      }
+    }
+  ],
+  "totals": {
+    "subtotal": 1024.96,
+    "discount": 125.0,
+    "tax": 90.97,
+    "shipping": 0.0,
+    "handling": 0.0,
+    "giftWrap": 5.99,
+    "warranty": 99.99,
+    "grandTotal": 1215.92,
+    "paid": 1157.5,
+    "due": 58.42,
+    "currency": "USD",
+    "totalQuantity": 4,
+    "totalWeight": 58.8,
+    "effectiveTaxRate": 8.875,
+    "totalSavings": 140.99,
+    "itemCount": 3
+  },
+  "shipping": {
+    "method": "GROUND",
+    "carrier": "UPS",
+    "speed": "5-7 BUSINESS DAYS",
+    "packageCount": 2,
+    "totalWeight": 58.3,
+    "insuranceAmount": 1200.0,
+    "trackingNumbers": [
+      "1Z999AA10123456784",
+      "1Z999AA10123456785"
+    ]
+  },
+  "promotions": [
+    {
+      "code": "HOLIDAY2024",
+      "description": "Holiday Season 10% Off Electronics",
+      "type": "PERCENT",
+      "savings": 80.0
+    },
+    {
+      "code": "BUNDLE50",
+      "description": "Buy TV Get 15% Off Soundbar",
+      "type": "PERCENT",
+      "savings": 45.0
+    },
+    {
+      "code": "FREESHIP50",
+      "description": "Free Shipping on Orders Over $50",
+      "type": "SHIPPING",
+      "savings": 15.99
+    }
+  ],
+  "metadata": {
+    "version": "2.0",
+    "apiVersion": "v2",
+    "sourceSystem": "LEGACY_OMS",
+    "transformedAt": "2026-01-30T02:35:50.579917Z",
+    "transformationId": "a2e88bbb-0512-41cf-87e4-335a3df5e90a"
+  }
+}

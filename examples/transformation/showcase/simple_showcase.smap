@@ -1,0 +1,61 @@
+#===============================================================================
+# SchemaMap v1.4.0 - Simple Showcase Example
+#===============================================================================
+# This example demonstrates core SchemaMap features in a concise format
+#===============================================================================
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    Clean       : trim | collapse_spaces
+    CleanTitle  : trim | titlecase
+    ToMoney     : to_float | round(2)
+}
+
+@lookups {
+    status_map : {
+        "A" : "ACTIVE",
+        "I" : "INACTIVE", 
+        "P" : "PENDING"
+    }
+    
+    country_names : {
+        "US" : "United States",
+        "CA" : "Canada",
+        "UK" : "United Kingdom"
+    }
+}
+
+# Simple field mapping
+user.id                                 : userId
+user.status                             : status | lookup(@status_map)
+
+# String concatenation with transforms
+user.first_name + " " + user.last_name  : fullName | @CleanTitle
+
+# Email normalization
+user.email                              : email | trim | lowercase
+
+# Numeric conversions
+user.age                                : age | to_int
+order.total                             : orderTotal | @ToMoney
+
+# Nested path mapping
+user.address.street                     : address.line1 | @Clean
+user.address.city                       : address.city | @CleanTitle
+user.address.country                    : address.country | lookup(@country_names)
+
+# Array mapping
+user.tags[*]                            : interests[*] | lowercase
+
+# Coalescing (first non-null)
+user.mobile ?? user.phone ?? user.work  : primaryPhone
+
+# Computed fields
+@now                                    : processedAt
+@uuid                                   : transactionId
+
+# Constant values
+"1.0"                                   : version | constant

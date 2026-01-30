@@ -394,7 +394,18 @@ class SchemaMapTransformer:
         return None
     
     def _apply_transforms(self, value: Any, transforms: TransformChain) -> Any:
-        """Apply a chain of transformations to a value."""
+        """Apply a chain of transformations to a value, handling arrays."""
+        if not transforms.transforms:
+            return value
+        
+        # If value is a list, apply transforms to each element
+        if isinstance(value, list):
+            return [self._apply_transforms_single(v, transforms) for v in value]
+        
+        return self._apply_transforms_single(value, transforms)
+    
+    def _apply_transforms_single(self, value: Any, transforms: TransformChain) -> Any:
+        """Apply transforms to a single value."""
         for transform in transforms.transforms:
             value = self.evaluator.apply_transform(
                 value, transform.name, transform.args, transform.is_alias

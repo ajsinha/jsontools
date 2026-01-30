@@ -1,48 +1,66 @@
-# SchemaMap DSL Documentation
+# SchemaMap DSL - Complete Syntax Reference
 
-**Version:** 1.4.0  
-**Copyright:** (C) 2025-2030, All Rights Reserved - Ashutosh Sinha
+**Version:** 1.4.2  
+**Copyright:** © 2025-2030, All Rights Reserved - Ashutosh Sinha (ajsinha@gmail.com)  
+**Last Updated:** January 2026
+
+---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Quick Start](#quick-start)
-3. [File Structure](#file-structure)
-4. [Core Syntax](#core-syntax)
-5. [Configuration](#configuration)
-6. [Aliases](#aliases)
-7. [Lookups](#lookups)
-8. [Mappings](#mappings)
-9. [Transform Functions](#transform-functions)
-10. [Array Transformations](#array-transformations)
-11. [Computed Fields](#computed-fields)
-12. [Conditionals](#conditionals)
-13. [Examples](#examples)
-14. [CLI Usage](#cli-usage)
-15. [Python API](#python-api)
+1. [Overview](#1-overview)
+2. [Quick Start](#2-quick-start)
+3. [File Structure](#3-file-structure)
+4. [Complete Syntax Reference](#4-complete-syntax-reference)
+   - [4.1 Basic Mapping Syntax](#41-basic-mapping-syntax)
+   - [4.2 Path Notation](#42-path-notation)
+   - [4.3 Operators](#43-operators)
+   - [4.4 Special Directives](#44-special-directives)
+5. [Configuration Block](#5-configuration-block)
+6. [Aliases](#6-aliases)
+7. [Lookup Tables](#7-lookup-tables)
+8. [Transform Functions - Complete Reference](#8-transform-functions---complete-reference)
+   - [8.1 String Functions](#81-string-functions)
+   - [8.2 Numeric Functions](#82-numeric-functions)
+   - [8.3 Boolean Functions](#83-boolean-functions)
+   - [8.4 Date/Time Functions](#84-datetime-functions)
+   - [8.5 Array Functions](#85-array-functions)
+   - [8.6 Conditional Functions](#86-conditional-functions)
+   - [8.7 Special Functions](#87-special-functions)
+9. [Array Transformations](#9-array-transformations)
+10. [Computed Fields](#10-computed-fields)
+11. [External Functions](#11-external-functions)
+12. [Code Compilation](#12-code-compilation)
+13. [CLI Reference](#13-cli-reference)
+14. [Python API Reference](#14-python-api-reference)
+15. [Syntax Quick Reference Card](#15-syntax-quick-reference-card)
 
 ---
 
-## Overview
+## 1. Overview
 
-SchemaMap is a domain-specific language (DSL) for transforming JSON documents between different schemas. It provides a declarative, readable syntax for defining how fields from a source JSON structure should map to a target JSON structure.
+SchemaMap is a domain-specific language (DSL) for transforming JSON documents between schemas. It provides a declarative, readable syntax for defining field mappings and transformations.
 
 ### Key Features
 
-- **Declarative Syntax**: Clear `source : target` mapping notation
-- **Transform Chains**: Pipe-based function chaining (`| trim | lowercase`)
-- **Reusable Aliases**: Define common transform patterns once
-- **Lookup Tables**: Map codes to values with inline or external lookups
-- **Array Support**: Transform arrays element-by-element
-- **Computed Fields**: Generate values using expressions
-- **Schema Validation**: Validate output against JSON Schema
-- **No Code Required**: Pure configuration-driven transformations
+| Feature | Description |
+|---------|-------------|
+| Declarative Syntax | Clear `source : target` mapping notation |
+| Transform Chains | Pipe-based function chaining (`\| trim \| lowercase`) |
+| Reusable Aliases | Define common transform patterns once with `@aliases` |
+| Lookup Tables | Map codes to values with `@lookups` |
+| Array Support | Transform arrays element-by-element with `[*]` |
+| Computed Fields | Generate values using `@compute`, `@now`, `@uuid` |
+| String Concatenation | Combine fields with `+` operator |
+| Coalescing | First non-null with `??` operator |
+| External Functions | Call Python functions with `@compute()` |
+| Code Compilation | 5-10x faster standalone Python code |
 
 ---
 
-## Quick Start
+## 2. Quick Start
 
-### 1. Create a Mapping File
+### Create a Mapping File
 
 ```
 # my_mapping.smap
@@ -51,871 +69,779 @@ SchemaMap is a domain-specific language (DSL) for transforming JSON documents be
     null_handling : omit
 }
 
-# Map fields
-user.first_name         : firstName | trim | titlecase
-user.last_name          : lastName | trim | titlecase
-user.email              : contactEmail | lowercase
-user.age                : age | to_int
-```
-
-### 2. Run the Transformation
-
-```bash
-python transform.py my_mapping.smap input.json --output result.json
-```
-
-### 3. Or Use Python API
-
-```python
-from jsontools.transformation import transform
-
-result = transform(source_data, "my_mapping.smap")
-```
-
----
-
-## File Structure
-
-A SchemaMap file (`.smap`) consists of these sections:
-
-```
-# Comments start with #
-
-@config {
-    # Configuration options
-}
-
 @aliases {
-    # Reusable transform chains
+    Clean : trim | titlecase
 }
 
 @lookups {
-    # Lookup tables for code mappings
+    status_codes : { "A": "ACTIVE", "I": "INACTIVE" }
 }
 
 # Mappings
+user.first_name + " " + user.last_name : fullName | @Clean
+user.email                              : email | trim | lowercase
+user.status                             : status | lookup(@status_codes)
+user.age                                : age | to_int
+@now                                    : processedAt
+```
+
+### Run the Transformation
+
+```bash
+# Interpreted mode
+python transform.py my_mapping.smap input.json --output result.json
+
+# Compiled mode (faster)
+python transform.py --compile my_mapping.smap -o transformer.py
+```
+
+### Python API
+
+```python
+from jsontools.transformation import transform, load_mapping
+
+# One-liner
+result = transform(source_data, "my_mapping.smap")
+
+# Reusable transformer
+transformer = load_mapping("my_mapping.smap")
+result = transformer.transform(source_data)
+```
+
+---
+
+## 3. File Structure
+
+A SchemaMap file (`.smap`) has this structure:
+
+```
+# ============================================
+# Comments start with #
+# ============================================
+
+@config {
+    # Configuration options (optional)
+}
+
+@aliases {
+    # Reusable transform chains (optional)
+}
+
+@lookups {
+    # Lookup tables (optional)
+}
+
+# ============================================
+# MAPPINGS (required)
+# ============================================
 source.path : target.path | transforms
 ```
 
-All sections except mappings are optional.
+### Section Order
+
+1. `@config` - Must come first if present
+2. `@aliases` - Must come before lookups and mappings
+3. `@lookups` - Must come before mappings
+4. Mappings - Main transformation rules
 
 ---
 
-## Core Syntax
+## 4. Complete Syntax Reference
 
-### Basic Mapping
-
-```
-source_path : target_path
-```
-
-The colon (`:`) separates source from target and reads as "maps to".
-
-### With Transforms
+### 4.1 Basic Mapping Syntax
 
 ```
-source_path : target_path | transform1 | transform2
+source_expression : target_path
+source_expression : target_path | transform1 | transform2 | ...
 ```
 
-Transforms are chained with the pipe operator (`|`).
+| Component | Description | Example |
+|-----------|-------------|---------|
+| `source_expression` | Source field path, constant, or expression | `user.name`, `"constant"`, `a + b` |
+| `:` | Separator (reads as "maps to") | `:` |
+| `target_path` | Target field path (dot notation) | `customer.fullName` |
+| `\|` | Pipe operator (chains transforms) | `\| trim \| lowercase` |
+| `transform` | Transform function with optional args | `round(2)`, `lookup(@table)` |
 
-### Examples
+### 4.2 Path Notation
+
+#### Simple Paths
 
 ```
-user.name           : fullName              # Simple mapping
-user.email          : contact.email         # Nested target
-user.age            : age | to_int          # With transform
-user.status         : status | uppercase    # String transform
+field                   # Top-level field
+object.field            # Nested field
+object.nested.deep      # Deeply nested field
+```
+
+#### Array Access
+
+```
+array[0]                # First element (index 0)
+array[1]                # Second element (index 1)
+array[-1]               # Last element
+array[-2]               # Second to last element
+array[*]                # All elements (wildcard)
+array[*].field          # Field from all elements
+```
+
+#### Optional Fields
+
+```
+field?                  # Optional field (skip if null/missing)
+object.field?           # Optional nested field
+array[*].field?         # Optional field in array elements
+```
+
+#### Path Examples
+
+| Path | Description |
+|------|-------------|
+| `user.name` | Name field in user object |
+| `user.address.city` | City in nested address |
+| `orders[0]` | First order |
+| `orders[-1].total` | Total from last order |
+| `orders[*].items[*].price` | All prices from all items in all orders |
+| `user.middle_name?` | Optional middle name |
+
+### 4.3 Operators
+
+#### String Concatenation (`+`)
+
+Combines multiple values into a single string:
+
+```
+# Concatenate fields
+user.first_name + " " + user.last_name : fullName
+
+# With string literals
+"Order: " + order.id : displayId
+
+# Multiple fields
+addr.line1 + ", " + addr.city + ", " + addr.state : fullAddress
+```
+
+#### Coalescing (`??`)
+
+Returns the first non-null value:
+
+```
+# Two options
+user.mobile ?? user.home : primaryPhone
+
+# Multiple options
+user.mobile ?? user.home ?? user.work ?? "N/A" : phone
+
+# With nested paths
+contact.email ?? user.email ?? "unknown@example.com" : email
+```
+
+**Evaluation Order:** Left to right, stops at first non-null
+
+| Expression | Values | Result |
+|------------|--------|--------|
+| `a ?? b ?? c` | `a=null, b="X", c="Y"` | `"X"` |
+| `a ?? b ?? c` | `a="A", b="B", c="C"` | `"A"` |
+| `a ?? b ?? c` | `a=null, b=null, c="C"` | `"C"` |
+
+### 4.4 Special Directives
+
+#### @now - Current Timestamp
+
+```
+@now : createdAt                    # ISO 8601 timestamp
+@now : timestamp                    # "2026-01-30T12:00:00.000000Z"
+```
+
+#### @uuid - Generate UUID
+
+```
+@uuid : transactionId               # UUID v4
+@uuid : id                          # "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+```
+
+#### @compute - Computed Values
+
+```
+# Built-in functions
+@compute(count(items)) : itemCount
+@compute(sum(items[*].price)) : totalPrice
+
+# External functions
+@compute(calculate_tax(subtotal, 0.08)) : tax
+@compute(format_phone(phone, "US")) : formattedPhone
+
+# Multiple arguments from fields
+@compute(format_name(first, middle, last)) : fullName
+```
+
+#### Constants
+
+```
+"1.0" : version | constant          # String constant
+42 : magicNumber | constant         # Numeric constant
+true : active | constant            # Boolean constant
 ```
 
 ---
 
-## Configuration
-
-The `@config` block sets transformation behavior:
+## 5. Configuration Block
 
 ```
 @config {
-    null_handling    : omit      # omit, keep, or default
-    missing_fields   : skip      # skip, error, or default
-    date_format      : "ISO8601" # Date format hint
-    strict_mode      : false     # Enable strict validation
+    null_handling       : omit
+    missing_fields      : skip
+    date_format         : iso8601
+    decimal_precision   : 2
+    strict_mode         : false
 }
 ```
 
-### Options
+### Configuration Options
 
-| Option | Values | Description |
-|--------|--------|-------------|
-| `null_handling` | `omit`, `keep` | How to handle null values |
-| `missing_fields` | `skip`, `error` | Handle missing source fields |
-| `date_format` | String | Default date format |
-| `strict_mode` | Boolean | Enable strict validation |
+| Option | Values | Default | Description |
+|--------|--------|---------|-------------|
+| `null_handling` | `omit`, `keep`, `default` | `keep` | How to handle null values |
+| `missing_fields` | `skip`, `error`, `default` | `skip` | Handle missing source fields |
+| `date_format` | `iso8601`, custom format | `iso8601` | Default date format |
+| `decimal_precision` | Integer | `2` | Default decimal places |
+| `strict_mode` | `true`, `false` | `false` | Enable strict validation |
+
+### null_handling Values
+
+| Value | Behavior |
+|-------|----------|
+| `omit` | Remove null fields from output |
+| `keep` | Preserve null values in output |
+| `default` | Replace null with type-appropriate default |
+
+### missing_fields Values
+
+| Value | Behavior |
+|-------|----------|
+| `skip` | Skip mappings where source field is missing |
+| `error` | Raise error if source field is missing |
+| `default` | Use default value for missing fields |
 
 ---
 
-## Aliases
+## 6. Aliases
 
-Aliases define reusable transform chains:
+Aliases define reusable transform chains referenced with `@` prefix.
+
+### Definition Syntax
 
 ```
 @aliases {
-    # Simple alias
-    Clean : trim | max_length(255)
+    AliasName : transform1 | transform2 | transform3
+}
+```
+
+### Common Alias Patterns
+
+```
+@aliases {
+    # String cleaning
+    Clean           : trim | collapse_spaces
+    CleanUpper      : trim | uppercase
+    CleanLower      : trim | lowercase
+    CleanTitle      : trim | titlecase
     
-    # Multiple transforms
-    Email : trim | lowercase | validate("email")
+    # Type conversions
+    ToMoney         : to_float | round(2)
+    ToPercent       : to_float | round(3)
+    ToInteger       : to_int
+    ToBool          : to_bool
     
-    # Numeric transforms
-    Money : to_float | round(2)
+    # Compound operations
+    Email           : trim | lowercase
+    Phone           : trim | replace("-", "") | replace(" ", "")
     
-    # With parameters (future)
-    Phone(country) : trim | normalize_phone(country)
+    # With validation
+    SafeString      : trim | max_length(255) | default("")
 }
 ```
 
 ### Using Aliases
 
-Reference aliases with `@` prefix:
-
 ```
+# Reference with @ prefix
 user.name           : fullName | @Clean
-user.email          : contactEmail | @Email
-account.balance     : balance | @Money
+user.email          : email | @Email
+order.total         : total | @ToMoney
+user.status         : active | @ToBool
+
+# Combine with other transforms
+field : target | @Clean | uppercase
 ```
+
+### Alias Expansion
+
+| Alias Usage | Expands To |
+|-------------|------------|
+| `@Clean` | `trim \| collapse_spaces` |
+| `@ToMoney` | `to_float \| round(2)` |
+| `@CleanTitle` | `trim \| titlecase` |
 
 ---
 
-## Lookups
+## 7. Lookup Tables
 
-Lookups map codes to values:
+Lookup tables map input values to output values.
 
-### Inline Lookups
+### Definition Syntax
 
 ```
 @lookups {
-    status_codes : {
-        "A" : "ACTIVE",
-        "I" : "INACTIVE",
-        "S" : "SUSPENDED"
-    }
-    
-    country_names : {
-        "US" : "United States",
-        "UK" : "United Kingdom",
-        "CA" : "Canada"
+    table_name : {
+        "input1" : "output1",
+        "input2" : "output2",
+        "input3" : "output3"
     }
 }
 ```
 
-### External File Lookups (Future)
+### Common Lookup Patterns
 
 ```
 @lookups {
-    countries : "lookups/countries.json"
+    # Status codes
+    status_codes : {
+        "A"     : "ACTIVE",
+        "I"     : "INACTIVE",
+        "P"     : "PENDING",
+        "S"     : "SUSPENDED"
+    }
+    
+    # Country names
+    countries : {
+        "US"    : "United States",
+        "CA"    : "Canada",
+        "UK"    : "United Kingdom",
+        "DE"    : "Germany"
+    }
+    
+    # Boolean-like values
+    yes_no : {
+        "Y"     : true,
+        "N"     : false,
+        "1"     : true,
+        "0"     : false
+    }
+    
+    # Priority levels
+    priorities : {
+        "H"     : "HIGH",
+        "M"     : "MEDIUM",
+        "L"     : "LOW"
+    }
 }
 ```
 
 ### Using Lookups
 
 ```
-user.status         : status | lookup(@status_codes)
-user.country        : countryName | lookup(@country_names)
+# Basic lookup
+user.status : status | lookup(@status_codes)
+
+# With other transforms
+user.country : country | uppercase | lookup(@countries)
+
+# Chained with default
+code : displayValue | lookup(@codes) | default("Unknown")
 ```
+
+### Lookup Behavior
+
+| Input | Table Has Key | Result |
+|-------|---------------|--------|
+| `"A"` | Yes (`"A": "ACTIVE"`) | `"ACTIVE"` |
+| `"X"` | No | `"X"` (pass-through) |
+| `null` | N/A | `null` |
 
 ---
 
-## Mappings
+## 8. Transform Functions - Complete Reference
 
-### Simple Field Mapping
+### 8.1 String Functions
 
-```
-source.field : target.field
-```
+| Function | Arguments | Description | Example |
+|----------|-----------|-------------|---------|
+| `trim` | - | Remove leading/trailing whitespace | `"  hello  "` → `"hello"` |
+| `ltrim` | - | Remove leading whitespace | `"  hello"` → `"hello"` |
+| `rtrim` | - | Remove trailing whitespace | `"hello  "` → `"hello"` |
+| `lowercase` | - | Convert to lowercase | `"HELLO"` → `"hello"` |
+| `uppercase` | - | Convert to uppercase | `"hello"` → `"HELLO"` |
+| `titlecase` | - | Capitalize each word | `"hello world"` → `"Hello World"` |
+| `capitalize` | - | Capitalize first letter only | `"hello world"` → `"Hello world"` |
+| `collapse_spaces` | - | Replace multiple spaces with single | `"a   b"` → `"a b"` |
+| `replace(old, new)` | 2 | Replace substring | `"hello" \| replace("l", "x")` → `"hexxo"` |
+| `regex_replace(pattern, repl)` | 2 | Regex replacement | `\| regex_replace("\\d+", "X")` |
+| `substring(start, end)` | 1-2 | Extract substring | `"hello" \| substring(0, 2)` → `"he"` |
+| `prefix(str)` | 1 | Add prefix | `"123" \| prefix("ID-")` → `"ID-123"` |
+| `suffix(str)` | 1 | Add suffix | `"file" \| suffix(".txt")` → `"file.txt"` |
+| `max_length(n)` | 1 | Truncate to max length | `"hello" \| max_length(3)` → `"hel"` |
+| `min_length(n, pad)` | 1-2 | Pad to min length | `"5" \| min_length(3, "0")` → `"005"` |
+| `pad_left(n, char)` | 1-2 | Left pad | `"5" \| pad_left(3, "0")` → `"005"` |
+| `pad_right(n, char)` | 1-2 | Right pad | `"5" \| pad_right(3, "0")` → `"500"` |
+| `split(delimiter)` | 1 | Split into array | `"a,b,c" \| split(",")` → `["a","b","c"]` |
+| `join(delimiter)` | 1 | Join array to string | `["a","b"] \| join(",")` → `"a,b"` |
+| `reverse` | - | Reverse string | `"hello"` → `"olleh"` |
+| `strip(chars)` | 0-1 | Remove specified characters | `"##hello##" \| strip("#")` → `"hello"` |
 
-### Nested Paths
+### 8.2 Numeric Functions
 
-```
-user.address.city : location.city
-user.contact.email : emails.primary
-```
+| Function | Arguments | Description | Example |
+|----------|-----------|-------------|---------|
+| `to_int` | - | Convert to integer | `"42"` → `42` |
+| `to_float` | - | Convert to float | `"3.14"` → `3.14` |
+| `round(decimals)` | 0-1 | Round to decimals | `3.14159 \| round(2)` → `3.14` |
+| `floor` | - | Round down | `3.7` → `3` |
+| `ceil` | - | Round up | `3.2` → `4` |
+| `abs` | - | Absolute value | `-5` → `5` |
+| `multiply(n)` | 1 | Multiply by n | `10 \| multiply(2)` → `20` |
+| `divide(n)` | 1 | Divide by n | `10 \| divide(2)` → `5` |
+| `add(n)` | 1 | Add n | `10 \| add(5)` → `15` |
+| `subtract(n)` | 1 | Subtract n | `10 \| subtract(3)` → `7` |
+| `modulo(n)` | 1 | Remainder | `10 \| modulo(3)` → `1` |
+| `power(n)` | 1 | Raise to power | `2 \| power(3)` → `8` |
+| `clamp(min, max)` | 2 | Clamp to range | `15 \| clamp(0, 10)` → `10` |
+| `percent` | - | Convert to percentage | `0.15` → `15` |
+| `from_percent` | - | Convert from percentage | `15` → `0.15` |
 
-### Optional Fields
+### 8.3 Boolean Functions
 
-Use `?` for optional source fields:
+| Function | Arguments | Description | Example |
+|----------|-----------|-------------|---------|
+| `to_bool` | - | Convert to boolean | `"Y"` → `true`, `"N"` → `false` |
+| `negate` | - | Logical NOT | `true` → `false` |
+| `is_null` | - | Check if null | `null` → `true` |
+| `is_empty` | - | Check if empty | `""` → `true`, `[]` → `true` |
+| `is_present` | - | Check if not null/empty | `"hello"` → `true` |
 
-```
-user.middle_name? : middleName
-```
+**to_bool Conversion Table:**
 
-### Array Access
+| Input | Output |
+|-------|--------|
+| `"Y"`, `"y"`, `"yes"`, `"Yes"`, `"YES"` | `true` |
+| `"N"`, `"n"`, `"no"`, `"No"`, `"NO"` | `false` |
+| `"true"`, `"True"`, `"TRUE"` | `true` |
+| `"false"`, `"False"`, `"FALSE"` | `false` |
+| `"1"`, `1` | `true` |
+| `"0"`, `0` | `false` |
+| Non-empty string | `true` |
+| Empty string `""` | `false` |
+| `null` | `false` |
 
-```
-users[0]            : firstUser           # First element
-users[-1]           : lastUser            # Last element
-users[*]            : allUsers            # All elements
-```
+### 8.4 Date/Time Functions
 
-### Constants
+| Function | Arguments | Description | Example |
+|----------|-----------|-------------|---------|
+| `parse_date(format)` | 1 | Parse date string | `"01/15/2026" \| parse_date("%m/%d/%Y")` |
+| `format_date(format)` | 1 | Format date | `\| format_date("%Y-%m-%d")` |
+| `to_iso8601` | - | Convert to ISO format | → `"2026-01-15T00:00:00Z"` |
+| `to_timestamp` | - | Convert to Unix timestamp | → `1768521600` |
+| `from_timestamp` | - | Convert from Unix timestamp | → ISO date |
+| `add_days(n)` | 1 | Add days | `\| add_days(7)` |
+| `add_months(n)` | 1 | Add months | `\| add_months(1)` |
+| `add_years(n)` | 1 | Add years | `\| add_years(1)` |
+| `subtract_days(n)` | 1 | Subtract days | `\| subtract_days(7)` |
+| `start_of_day` | - | Set to start of day | → `"2026-01-15T00:00:00Z"` |
+| `end_of_day` | - | Set to end of day | → `"2026-01-15T23:59:59Z"` |
+| `start_of_month` | - | Set to first of month | → `"2026-01-01T00:00:00Z"` |
+| `end_of_month` | - | Set to last of month | → `"2026-01-31T23:59:59Z"` |
 
-```
-"1.0"               : version | constant
-42                  : magicNumber | constant
-```
+**Common Date Format Codes:**
 
-### Field Concatenation
+| Code | Meaning | Example |
+|------|---------|---------|
+| `%Y` | 4-digit year | `2026` |
+| `%y` | 2-digit year | `26` |
+| `%m` | Month (01-12) | `01` |
+| `%d` | Day (01-31) | `15` |
+| `%H` | Hour 24h (00-23) | `14` |
+| `%I` | Hour 12h (01-12) | `02` |
+| `%M` | Minute (00-59) | `30` |
+| `%S` | Second (00-59) | `45` |
+| `%p` | AM/PM | `PM` |
 
-```
-user.first_name + " " + user.last_name : fullName
-```
+### 8.5 Array Functions
 
-### Coalescing
+| Function | Arguments | Description | Example |
+|----------|-----------|-------------|---------|
+| `first` | - | Get first element | `[1,2,3]` → `1` |
+| `last` | - | Get last element | `[1,2,3]` → `3` |
+| `at(index)` | 1 | Get element at index | `[1,2,3] \| at(1)` → `2` |
+| `count` | - | Count elements | `[1,2,3]` → `3` |
+| `sum` | - | Sum numeric values | `[1,2,3]` → `6` |
+| `avg` | - | Average of values | `[1,2,3]` → `2` |
+| `min` | - | Minimum value | `[3,1,2]` → `1` |
+| `max` | - | Maximum value | `[1,3,2]` → `3` |
+| `flatten` | - | Flatten nested arrays | `[[1,2],[3]]` → `[1,2,3]` |
+| `distinct` | - | Remove duplicates | `[1,2,1,3]` → `[1,2,3]` |
+| `sort` | - | Sort ascending | `[3,1,2]` → `[1,2,3]` |
+| `sort_desc` | - | Sort descending | `[1,3,2]` → `[3,2,1]` |
+| `reverse` | - | Reverse order | `[1,2,3]` → `[3,2,1]` |
+| `take(n)` | 1 | Take first n elements | `[1,2,3] \| take(2)` → `[1,2]` |
+| `skip(n)` | 1 | Skip first n elements | `[1,2,3] \| skip(1)` → `[2,3]` |
+| `wrap` | - | Wrap single value in array | `"a"` → `["a"]` |
+| `unwrap` | - | Extract single element | `["a"]` → `"a"` |
+| `filter_null` | - | Remove null values | `[1,null,2]` → `[1,2]` |
+| `filter_empty` | - | Remove empty values | `["a","",null]` → `["a"]` |
 
-```
-user.mobile ?? user.home_phone : primaryPhone
-```
+### 8.6 Conditional Functions
 
----
+| Function | Arguments | Description | Example |
+|----------|-----------|-------------|---------|
+| `default(value)` | 1 | Default if null | `null \| default("N/A")` → `"N/A"` |
+| `if_empty(value)` | 1 | Default if empty | `"" \| if_empty("N/A")` → `"N/A"` |
+| `if_null(value)` | 1 | Alias for default | Same as `default` |
+| `when(match, result)` | 2 | Map specific value | `"A" \| when("A", "Active")` → `"Active"` |
+| `else(value)` | 1 | Default for when chain | `\| when("A", "X") \| else("?")` |
+| `coalesce(v1, v2, ...)` | 1+ | First non-null | `\| coalesce(a, b, "default")` |
+| `if_then_else(cond, t, f)` | 3 | Ternary condition | `\| if_then_else(">10", "big", "small")` |
 
-## Transform Functions
-
-### String Functions
-
-| Function | Args | Description |
-|----------|------|-------------|
-| `trim` | - | Remove whitespace |
-| `lowercase` | - | Convert to lowercase |
-| `uppercase` | - | Convert to uppercase |
-| `titlecase` | - | Capitalize words |
-| `capitalize` | - | Capitalize first letter |
-| `replace(old, new)` | 2 | Replace substring |
-| `regex_replace(pattern, replacement)` | 2 | Regex replace |
-| `substring(start, end)` | 1-2 | Extract substring |
-| `prefix(str)` | 1 | Add prefix |
-| `suffix(str)` | 1 | Add suffix |
-| `max_length(n)` | 1 | Truncate to length |
-| `split(delimiter)` | 1 | Split into array |
-| `join(delimiter)` | 1 | Join array to string |
-| `collapse_spaces` | - | Collapse multiple spaces |
-
-### Numeric Functions
-
-| Function | Args | Description |
-|----------|------|-------------|
-| `to_int` | - | Convert to integer |
-| `to_float` | - | Convert to float |
-| `round(decimals)` | 0-1 | Round to decimals |
-| `floor` | - | Round down |
-| `ceil` | - | Round up |
-| `abs` | - | Absolute value |
-| `multiply(n)` | 1 | Multiply by n |
-| `divide(n)` | 1 | Divide by n |
-| `add(n)` | 1 | Add n |
-| `subtract(n)` | 1 | Subtract n |
-| `clamp(min, max)` | 2 | Clamp to range |
-
-### Boolean Functions
-
-| Function | Args | Description |
-|----------|------|-------------|
-| `to_bool` | - | Convert to boolean |
-| `negate` | - | Logical NOT |
-
-### Date Functions
-
-| Function | Args | Description |
-|----------|------|-------------|
-| `parse_date(format)` | 1 | Parse date string |
-| `format_date(format)` | 1 | Format date |
-| `to_iso8601` | - | Convert to ISO format |
-| `add_days(n)` | 1 | Add days |
-| `add_months(n)` | 1 | Add months |
-| `add_years(n)` | 1 | Add years |
-
-### Array Functions
-
-| Function | Args | Description |
-|----------|------|-------------|
-| `first` | - | Get first element |
-| `last` | - | Get last element |
-| `at(index)` | 1 | Get element at index |
-| `flatten` | - | Flatten nested arrays |
-| `distinct` | - | Remove duplicates |
-| `sort` | - | Sort array |
-| `reverse` | - | Reverse array |
-| `take(n)` | 1 | Take first n elements |
-| `skip(n)` | 1 | Skip first n elements |
-| `count` | - | Count elements |
-| `sum` | - | Sum numeric values |
-| `avg` | - | Average of values |
-| `wrap` | - | Wrap in array |
-
-### Conditional Functions
-
-| Function | Args | Description |
-|----------|------|-------------|
-| `default(value)` | 1 | Default if null |
-| `if_empty(value)` | 1 | Default if empty |
-| `when(match, result)` | 2 | Map specific value |
-| `else(value)` | 1 | Default for when chain |
-
-### Special Functions
-
-| Function | Args | Description |
-|----------|------|-------------|
-| `constant` | - | Mark as constant |
-| `lookup(table)` | 1 | Lookup in table |
-| `mask(visible)` | 0-1 | Mask sensitive data |
-| `hash(algorithm)` | 0-1 | Hash value |
-| `validate(type)` | 1 | Validate format |
-
----
-
-## Array Transformations
-
-### Element-by-Element Mapping
-
-```
-users[*].name       : persons[*].fullName | titlecase
-users[*].age        : persons[*].age | to_int
-users[*].email      : persons[*].contact | lowercase
-```
-
-### Complete Example
-
-Source:
-```json
-{
-  "users": [
-    {"name": "JOHN", "age": "30"},
-    {"name": "JANE", "age": "25"}
-  ]
-}
-```
-
-Mapping:
-```
-users[*].name : people[*].displayName | titlecase
-users[*].age  : people[*].yearsOld | to_int
-```
-
-Target:
-```json
-{
-  "people": [
-    {"displayName": "John", "yearsOld": 30},
-    {"displayName": "Jane", "yearsOld": 25}
-  ]
-}
-```
-
----
-
-## Computed Fields
-
-### Using @compute
-
-```
-@compute(sum(items[*].price))           : totalPrice
-@compute(count(items))                  : itemCount
-@compute(items[0].price * items[0].qty) : firstLineTotal
-```
-
-### Using @now and @uuid
-
-```
-@now    : transformedAt    # Current timestamp
-@uuid   : transactionId    # Generate UUID
-```
-
----
-
-## Conditionals
-
-### When/Else Chains
+**When/Else Chain Example:**
 
 ```
 status : displayStatus
     | when("A", "Active")
     | when("I", "Inactive")
-    | when("S", "Suspended")
+    | when("P", "Pending")
     | else("Unknown")
 ```
 
-### Conditional Blocks (Future)
+### 8.7 Special Functions
 
-```
-@when type == "business" {
-    company_name : name
-    tax_id : businessId
-}
-@else {
-    first_name + " " + last_name : name
-    ssn : personalId
-}
-```
+| Function | Arguments | Description | Example |
+|----------|-----------|-------------|---------|
+| `constant` | - | Mark as constant value | `"1.0" : version \| constant` |
+| `lookup(table)` | 1 | Lookup in table | `\| lookup(@status_codes)` |
+| `mask(visible)` | 0-1 | Mask sensitive data | `"1234567890" \| mask(4)` → `"******7890"` |
+| `hash(algo)` | 0-1 | Hash value | `\| hash("md5")` |
+| `base64_encode` | - | Encode to Base64 | `"hello"` → `"aGVsbG8="` |
+| `base64_decode` | - | Decode from Base64 | `"aGVsbG8="` → `"hello"` |
+| `json_encode` | - | Encode to JSON string | `{a:1}` → `"{\"a\":1}"` |
+| `json_decode` | - | Decode JSON string | `"{\"a\":1}"` → `{a:1}` |
+| `type` | - | Get value type | `"hello"` → `"string"` |
+| `debug` | - | Log value (development) | Logs value, passes through |
 
 ---
 
-## Examples
+## 9. Array Transformations
 
-### Example 1: User Profile Transformation
+### Element-by-Element Mapping
 
-Source:
+Use `[*]` wildcard to transform each element:
+
+```
+# Transform each element
+users[*].name : people[*].fullName | titlecase
+users[*].age  : people[*].age | to_int
+users[*].email : people[*].contact | lowercase
+
+# Nested arrays
+orders[*].items[*].price : orders[*].lineItems[*].amount | to_float
+```
+
+### Array Mapping Example
+
+**Source:**
 ```json
 {
-  "user": {
-    "first_name": "JOHN",
-    "last_name": "DOE",
-    "email": "JOHN.DOE@EXAMPLE.COM",
-    "status": "A"
-  }
+  "users": [
+    {"name": "JOHN DOE", "age": "30", "status": "A"},
+    {"name": "JANE SMITH", "age": "25", "status": "I"}
+  ]
 }
 ```
 
-Mapping:
+**Mapping:**
 ```
-@config {
-    null_handling : omit
-}
-
 @lookups {
-    status_map : {
-        "A" : "ACTIVE",
-        "I" : "INACTIVE"
-    }
+    status : { "A": "ACTIVE", "I": "INACTIVE" }
 }
 
-user.first_name + " " + user.last_name : fullName | trim | titlecase
-user.email              : contactEmail | lowercase
-user.status             : status | lookup(@status_map)
-@now                    : transformedAt
+users[*].name   : people[*].fullName | titlecase
+users[*].age    : people[*].yearsOld | to_int
+users[*].status : people[*].status | lookup(@status)
 ```
 
-Target:
+**Result:**
 ```json
 {
-  "fullName": "John Doe",
-  "contactEmail": "john.doe@example.com",
-  "status": "ACTIVE",
-  "transformedAt": "2025-01-30T12:00:00Z"
+  "people": [
+    {"fullName": "John Doe", "yearsOld": 30, "status": "ACTIVE"},
+    {"fullName": "Jane Smith", "yearsOld": 25, "status": "INACTIVE"}
+  ]
 }
 ```
 
-### Example 2: Order Transformation
+### Array Aggregation
 
-Source:
-```json
-{
-  "order_id": "ORD-001",
-  "items": [
-    {"sku": "ITEM-1", "qty": 2, "price": 10.50},
-    {"sku": "ITEM-2", "qty": 1, "price": 25.00}
-  ],
-  "customer": {
-    "name": "John Doe",
-    "email": "john@example.com"
-  }
-}
 ```
+# Count elements
+@compute(count(items)) : itemCount
 
-Mapping:
-```
-@aliases {
-    Money : to_float | round(2)
-}
+# Sum values
+@compute(sum(items[*].price)) : totalPrice
 
-order_id                    : orderId
-items[*].sku               : lineItems[*].productCode
-items[*].qty               : lineItems[*].quantity | to_int
-items[*].price             : lineItems[*].unitPrice | @Money
-customer.name              : buyer.fullName
-customer.email             : buyer.email | lowercase
-@compute(count(items))     : summary.itemCount
-@compute(sum(items[*].price)) : summary.subtotal | @Money
+# Average
+@compute(avg(items[*].rating)) : averageRating
+
+# Get specific elements
+items[0] : firstItem
+items[-1] : lastItem
 ```
 
 ---
 
-## CLI Usage
+## 10. Computed Fields
 
-### Basic Transformation
+### Using @compute
 
-```bash
-python transform.py mapping.smap input.json
+```
+# Built-in aggregate functions
+@compute(count(items)) : totals.itemCount
+@compute(sum(items[*].price)) : totals.subtotal
+@compute(avg(items[*].rating)) : metrics.avgRating
+@compute(min(items[*].price)) : metrics.lowestPrice
+@compute(max(items[*].price)) : metrics.highestPrice
+
+# Arithmetic expressions
+@compute(subtotal * 0.08) : tax
+@compute(subtotal + tax + shipping) : grandTotal
+
+# External function calls
+@compute(calculate_tax(subtotal, rate)) : tax
+@compute(format_phone(phone, "US")) : formattedPhone
+@compute(generate_order_id(order_num, channel)) : orderId
 ```
 
-### With Schema Validation
+### Using @now and @uuid
 
-```bash
-python transform.py mapping.smap input.json --schema target_schema.json
+```
+# Current timestamp
+@now : createdAt
+@now : metadata.processedAt
+@now : audit.timestamp
+
+# Generate UUID
+@uuid : transactionId
+@uuid : correlationId
+@uuid : requestId
 ```
 
-### Save to File
+### Computed Field Examples
 
-```bash
-python transform.py mapping.smap input.json --output result.json
-```
-
-### Verbose Mode
-
-```bash
-python transform.py mapping.smap input.json --verbose
-```
-
-### Full Options
-
-```bash
-python transform.py mapping.smap input.json \
-    --schema schema.json \
-    --output result.json \
-    --verbose
-```
+| Expression | Description | Example Output |
+|------------|-------------|----------------|
+| `@now` | ISO 8601 timestamp | `"2026-01-30T12:00:00.000000Z"` |
+| `@uuid` | UUID v4 | `"a1b2c3d4-e5f6-7890-abcd-ef1234567890"` |
+| `@compute(count(items))` | Array length | `5` |
+| `@compute(sum(prices))` | Sum of array | `150.50` |
 
 ---
 
-## Python API
+## 11. External Functions
 
-### Simple Transform
+### Registering Functions
 
-```python
-from jsontools.transformation import transform
-
-source = {"user": {"name": "John", "age": "30"}}
-result = transform(source, "mapping.smap")
+**Via CLI:**
+```bash
+python transform.py mapping.smap input.json --functions my_functions.py
 ```
 
-### With Validation
-
-```python
-from jsontools.transformation import transform
-
-result = transform(
-    source_data,
-    "mapping.smap",
-    validate_schema="target_schema.json"
-)
-```
-
-### Load and Reuse Transformer
-
+**Via Python API:**
 ```python
 from jsontools.transformation import load_mapping
 
-transformer = load_mapping("mapping.smap")
-
-result1 = transformer.transform(data1)
-result2 = transformer.transform(data2)
-result3 = transformer.transform(data3)
-```
-
-### Batch Transform
-
-```python
-transformer = load_mapping("mapping.smap")
-
-results = transformer.transform_batch([data1, data2, data3])
-```
-
-### Compile to Python Code
-
-```python
-from jsontools.transformation import compile_mapping
-
-code = compile_mapping("mapping.smap")
-with open("generated_transformer.py", "w") as f:
-    f.write(code)
-```
-
----
-
-## Best Practices
-
-1. **Use Aliases**: Define common transform patterns as aliases
-2. **Document Mappings**: Add comments to explain complex mappings
-3. **Validate Output**: Always validate against target schema
-4. **Handle Optionals**: Mark optional fields with `?`
-5. **Use Lookups**: Centralize code-to-value mappings
-6. **Test Incrementally**: Build and test mappings step by step
-
----
-
-## Error Handling
-
-### Common Errors
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `Expected ':'` | Missing colon in mapping | Add `:` between source and target |
-| `Expected value` | Invalid value in config | Check syntax |
-| `Lookup not found` | Unknown lookup reference | Define lookup in @lookups |
-| `Validation failed` | Output doesn't match schema | Check mapping produces correct types |
-
----
-
-## Version History
-
-- **1.4.0**: Initial SchemaMap module release
-  - Core DSL parser and transformer
-  - 50+ built-in transform functions
-  - Alias and lookup support
-  - JSON Schema validation
-  - CLI and Python API
-
----
-
-*For more information, see the examples in `examples/transformation/`*
-
----
-
-## External Python Functions (NEW in v1.4.0)
-
-SchemaMap supports calling external Python functions for custom transformation logic that goes beyond built-in transforms.
-
-### Registering Functions via Python API
-
-```python
-from jsontools.transformation import load_mapping
-
-# Define custom functions
-def calculate_tax(amount, rate=0.08):
-    return round(float(amount) * float(rate), 2)
-
-def format_currency(amount, symbol="$"):
-    return f"{symbol}{float(amount):,.2f}"
-
-# Load mapping and register functions
 transformer = load_mapping("mapping.smap")
 transformer.register_function("calculate_tax", calculate_tax)
-transformer.register_function("format_currency", format_currency)
-
-# Transform with custom functions available
-result = transformer.transform(source_data)
+transformer.register_file("my_functions.py")
 ```
 
-### Registering Multiple Functions
-
-```python
-# Register multiple at once
-transformer.register_functions({
-    "calculate_tax": calculate_tax,
-    "format_currency": format_currency,
-    "validate_email": lambda e: "@" in e
-})
-
-# Or from a module
-transformer.register_module("my_transforms")
-
-# Or from a file
-transformer.register_file("custom_functions.py")
-```
-
-### Using Functions in SchemaMap DSL
-
-#### Using @compute
+### Using External Functions
 
 ```
-# Call function with field values
-@compute(calculate_tax(order.subtotal, 0.08)) : order.tax
+# Single argument
+@compute(mask_ssn(customer.ssn)) : customer.maskedSSN
 
-# Nested function calls
-@compute(format_currency(calculate_total(subtotal, tax), "USD")) : displayTotal
+# Multiple arguments
+@compute(format_phone(phone, "US")) : formattedPhone
+@compute(calculate_age(birth_date)) : age
+@compute(format_name(first, middle, last, suffix)) : fullName
 
-# Multiple arguments from fields
-@compute(format_full_name(person.firstName, person.lastName)) : person.fullName
+# Multiple arguments from different paths
+@compute(calculate_total(order.subtotal, order.tax_rate, order.shipping)) : order.total
 ```
 
-#### Using @call (Explicit Syntax)
-
-```
-# Explicit function call syntax
-@call(calculate_tax, order.subtotal, 0.08) : order.tax
-
-# With field references
-@call(format_phone, contact.phone, "US") : contact.formattedPhone
-```
-
-### @functions Block (Declarative Registration)
-
-Register functions directly in the .smap file:
-
-```
-@functions {
-    calc_tax    : "my_module:calculate_tax"
-    fmt_phone   : "utils.formatters:format_phone"
-    validate    : "validators:validate_email as check_email"
-}
-```
-
-Format: `name : "module.path:function_name"`
-
-### @config Function Loading
-
-```
-@config {
-    null_handling    : omit
-    functions_module : "my_transforms"
-    functions_file   : "path/to/custom_functions.py"
-}
-```
-
-### Creating Custom Function Files
-
-Create a Python file with your functions:
+### Function Best Practices
 
 ```python
 # custom_functions.py
 
-def calculate_tax(amount, rate=0.08):
-    """Calculate tax amount."""
-    return round(float(amount) * float(rate), 2)
-
-def format_currency(amount, currency="USD"):
-    """Format as currency string."""
-    symbols = {"USD": "$", "EUR": "€", "GBP": "£"}
-    symbol = symbols.get(currency, currency + " ")
-    return f"{symbol}{float(amount):,.2f}"
-
-def calculate_age(birth_date):
-    """Calculate age from birth date."""
-    from datetime import datetime, date
-    bd = datetime.fromisoformat(birth_date).date()
-    today = date.today()
-    return today.year - bd.year - ((today.month, today.day) < (bd.month, bd.day))
-
-def format_phone(phone, country="US"):
-    """Format phone number."""
+def format_phone(phone: str, country: str = "US") -> str:
+    """Format phone number for display."""
+    if not phone:
+        return None
+    
     import re
     digits = re.sub(r'\D', '', str(phone))
+    
     if country == "US" and len(digits) == 10:
-        return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+        return f"+1 ({digits[:3]}) {digits[3:6]}-{digits[6:]}"
     return phone
+
+def mask_ssn(ssn: str) -> str:
+    """Mask SSN showing only last 4 digits."""
+    if not ssn:
+        return None
+    
+    digits = ssn.replace("-", "")
+    if len(digits) >= 4:
+        return f"XXX-XX-{digits[-4:]}"
+    return "XXX-XX-XXXX"
+
+def calculate_age(birth_date: str) -> int:
+    """Calculate age from birth date."""
+    if not birth_date:
+        return None
+    
+    from datetime import datetime, date
+    try:
+        bd = datetime.strptime(birth_date, "%m/%d/%Y").date()
+        today = date.today()
+        return today.year - bd.year - ((today.month, today.day) < (bd.month, bd.day))
+    except ValueError:
+        return None
 ```
-
-### CLI with External Functions
-
-```bash
-# Load functions from file
-python transform.py mapping.smap input.json --functions custom_functions.py
-
-# List registered functions
-python transform.py mapping.smap input.json --functions custom_functions.py --list-functions
-```
-
-### Complete Example
-
-**custom_funcs.py:**
-```python
-def calculate_order_total(subtotal, tax_rate, shipping):
-    tax = round(float(subtotal) * float(tax_rate), 2)
-    return round(float(subtotal) + tax + float(shipping), 2)
-
-def generate_confirmation_code(order_id):
-    import hashlib
-    return hashlib.md5(str(order_id).encode()).hexdigest()[:8].upper()
-```
-
-**order_mapping.smap:**
-```
-@config {
-    null_handling : omit
-}
-
-order.id                                        : orderId
-order.items[*].price                           : items[*].unitPrice | to_float
-
-# Use custom functions
-@compute(calculate_order_total(order.subtotal, 0.08, order.shipping)) : totals.grandTotal
-@compute(generate_confirmation_code(order.id))  : confirmationCode
-
-@now                                            : processedAt
-```
-
-**Python:**
-```python
-from jsontools.transformation import load_mapping
-
-transformer = load_mapping("order_mapping.smap")
-transformer.register_file("custom_funcs.py")
-
-result = transformer.transform({
-    "order": {
-        "id": "ORD-12345",
-        "subtotal": 100.00,
-        "shipping": 5.99,
-        "items": [{"price": "50.00"}, {"price": "50.00"}]
-    }
-})
-
-print(result)
-# {
-#   "orderId": "ORD-12345",
-#   "items": [{"unitPrice": 50.0}, {"unitPrice": 50.0}],
-#   "totals": {"grandTotal": 113.99},
-#   "confirmationCode": "7E3B8F2A",
-#   "processedAt": "2025-01-30T12:00:00Z"
-# }
-```
-
-### Best Practices for External Functions
-
-1. **Keep functions pure** - No side effects, same input always produces same output
-2. **Handle None/null** - Functions should gracefully handle missing values
-3. **Type conversion** - Convert inputs to expected types (float, int, str)
-4. **Return appropriate types** - Return types that serialize to JSON
-5. **Error handling** - Wrap operations in try/except to avoid transformation failures
-6. **Documentation** - Add docstrings describing usage and arguments
-
-### Function Naming
-
-Avoid these reserved names which conflict with built-ins:
-- `sum`, `count`, `avg`, `min`, `max`
-- `len`, `abs`, `round`, `int`, `float`, `str`, `bool`
-
-Use descriptive names like `calculate_tax`, `format_currency`, `validate_email`.
-
 
 ---
 
-## Code Compilation (NEW in v1.4.0)
+## 12. Code Compilation
 
-SchemaMap can compile `.smap` files to optimized, standalone Python code that runs 5-10x faster than interpreted transformations.
-
-### Why Compile?
-
-| Aspect | Interpreted | Compiled |
-|--------|-------------|----------|
-| Speed | ~8,000 ops/sec | ~40,000 ops/sec |
-| Startup | Fast (no compile) | Requires compile step |
-| Debugging | Easy | Harder |
-| Dependencies | Requires runtime | Standalone |
-| Use case | Development | Production |
-
-### Compiling SchemaMap
+### Compiling to Python
 
 ```bash
 # Basic compilation
 python transform.py --compile mapping.smap
 
-# With custom output path and class name
+# Custom output and class name
 python transform.py --compile mapping.smap \
     -o my_transformer.py \
-    --class-name CustomerTransformer
+    --class-name MyTransformer
 ```
 
 ### Using Compiled Code
 
-The generated Python file is standalone and can be used directly:
-
 ```python
-# Import the generated transformer
-from my_transformer import CustomerTransformer
+from my_transformer import MyTransformer
 
 # Create instance
-transformer = CustomerTransformer()
+transformer = MyTransformer()
 
-# Register external functions (if any)
-transformer.register_function("calculate_tax", lambda x, r: x * r)
+# Register external functions if needed
+transformer.register_function("calculate_tax", calculate_tax)
 
 # Transform data
 result = transformer.transform(source_data)
@@ -924,87 +850,209 @@ result = transformer.transform(source_data)
 results = transformer.transform_batch(items)
 ```
 
-### Generated Code Structure
+### Performance Comparison
 
-```python
-class CustomerTransformer:
-    def __init__(self):
-        self._lookups = {...}  # Inlined lookup tables
-        self._external_functions = {}
-    
-    def register_function(self, name, func):
-        """Register external function."""
-        ...
-    
-    def transform(self, source: Dict) -> Dict:
-        """Transform single item."""
-        ...
-    
-    def transform_batch(self, items: List[Dict]) -> List[Dict]:
-        """Transform multiple items."""
-        ...
-```
+| Metric | Interpreted | Compiled | Improvement |
+|--------|-------------|----------|-------------|
+| Simple transforms | ~8,000 ops/sec | ~40,000 ops/sec | 5x |
+| Complex transforms | ~250 ops/sec | ~1,600 ops/sec | 6.4x |
 
 ### Benchmarking
 
-Compare interpreted vs compiled performance:
+```bash
+python transform.py --benchmark mapping.smap input.json --iterations 10000
+```
+
+---
+
+## 13. CLI Reference
+
+### Basic Usage
 
 ```bash
-python transform.py --benchmark mapping.smap input.json --iterations 20000
+python transform.py <mapping_file> <input_file> [options]
 ```
 
-Output:
-```
-============================================================
-  BENCHMARK RESULTS
-============================================================
+### Options
 
-  Interpreted Transformer:
-    Total time:     2.5230 seconds
-    Ops/second:     7,927
-    μs/operation:   126.15
+| Option | Description |
+|--------|-------------|
+| `-o, --output FILE` | Output file (default: stdout) |
+| `--functions FILE` | Load external functions from Python file |
+| `--schema FILE` | Validate output against JSON Schema |
+| `--verbose` | Verbose output |
+| `--quiet` | Suppress non-error output |
+| `--pretty` | Pretty-print JSON output |
 
-  Compiled Transformer:
-    Total time:     0.4850 seconds
-    Ops/second:     41,236
-    μs/operation:   24.25
+### Compilation Options
 
-  --------------------------------------------------------
-  SPEEDUP: 5.2x faster with compiled code!
-============================================================
-```
+| Option | Description |
+|--------|-------------|
+| `--compile` | Compile to Python code |
+| `--class-name NAME` | Class name for compiled code |
 
-### Optimization Techniques
+### Benchmark Options
 
-The compiled code is faster because:
+| Option | Description |
+|--------|-------------|
+| `--benchmark` | Run performance benchmark |
+| `--iterations N` | Number of benchmark iterations |
 
-1. **No parsing** - DSL is pre-parsed at compile time
-2. **Inlined transforms** - Functions become inline expressions
-3. **Inlined lookups** - Lookup tables embedded in code
-4. **No runtime dispatch** - Direct Python execution
-5. **Bytecode optimization** - Python compiler optimizes further
+### Examples
 
-### Workflow Recommendations
-
-**Development:**
 ```bash
-# Use interpreted for quick iteration
+# Basic transformation
 python transform.py mapping.smap input.json
-```
 
-**Production:**
-```bash
-# Compile once, run many times
+# With output file
+python transform.py mapping.smap input.json -o result.json
+
+# With external functions
+python transform.py mapping.smap input.json --functions funcs.py
+
+# Compile to Python
 python transform.py --compile mapping.smap -o transformer.py
 
-# Deploy transformer.py with your application
+# Benchmark
+python transform.py --benchmark mapping.smap input.json --iterations 10000
 ```
 
-**CI/CD:**
-```bash
-# Compile during build
-python transform.py --compile mappings/*.smap
+---
 
-# Run tests with compiled transformers
-python -m pytest
+## 14. Python API Reference
+
+### Quick Transform
+
+```python
+from jsontools.transformation import transform
+
+result = transform(source_data, "mapping.smap")
 ```
+
+### Load Mapping
+
+```python
+from jsontools.transformation import load_mapping
+
+transformer = load_mapping("mapping.smap")
+result = transformer.transform(source_data)
+```
+
+### Register Functions
+
+```python
+# Single function
+transformer.register_function("my_func", my_func)
+
+# Multiple functions
+transformer.register_functions({
+    "func1": func1,
+    "func2": func2
+})
+
+# From file
+transformer.register_file("functions.py")
+
+# From module
+transformer.register_module("my_module")
+```
+
+### Batch Processing
+
+```python
+results = transformer.transform_batch(items)
+```
+
+### Error Handling
+
+```python
+from jsontools.transformation import TransformError
+
+try:
+    result = transformer.transform(data)
+except TransformError as e:
+    print(f"Transformation failed: {e}")
+```
+
+---
+
+## 15. Syntax Quick Reference Card
+
+### Mapping Syntax
+
+```
+source : target                     # Simple mapping
+source : target | transform         # With transform
+source : target | t1 | t2 | t3      # Transform chain
+source : target | @Alias            # Using alias
+```
+
+### Operators
+
+```
+a + " " + b                         # String concatenation
+a ?? b ?? c                         # Coalescing (first non-null)
+field?                              # Optional field
+```
+
+### Path Notation
+
+```
+field                               # Simple field
+object.field                        # Nested field
+array[0]                            # Array index
+array[-1]                           # Last element
+array[*]                            # All elements (wildcard)
+array[*].field                      # Field from all elements
+```
+
+### Special Directives
+
+```
+@now                                # Current timestamp
+@uuid                               # Generate UUID
+@compute(expr)                      # Computed value
+@compute(func(arg1, arg2))          # External function call
+"constant"                          # String constant
+```
+
+### Blocks
+
+```
+@config { option : value }          # Configuration
+@aliases { Name : transforms }      # Alias definitions
+@lookups { table : { k : v } }      # Lookup tables
+```
+
+### Common Transforms
+
+| Transform | Description |
+|-----------|-------------|
+| `trim` | Remove whitespace |
+| `lowercase` | Convert to lowercase |
+| `uppercase` | Convert to uppercase |
+| `titlecase` | Capitalize words |
+| `to_int` | Convert to integer |
+| `to_float` | Convert to float |
+| `to_bool` | Convert to boolean |
+| `round(n)` | Round to n decimals |
+| `default(v)` | Default if null |
+| `lookup(@t)` | Lookup in table |
+| `split(d)` | Split by delimiter |
+| `join(d)` | Join with delimiter |
+| `max_length(n)` | Truncate |
+| `replace(o, n)` | Replace substring |
+
+---
+
+## Related Documentation
+
+- [SHOWCASE_EXAMPLES.md](SHOWCASE_EXAMPLES.md) - Detailed walkthrough of showcase examples
+- [QUICKSTART.md](QUICKSTART.md) - Quick start guide
+- [EXAMPLES.md](EXAMPLES.md) - Additional examples
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
+
+---
+
+**Document Version:** 1.4.2  
+**Author:** Ashutosh Sinha (ajsinha@gmail.com)

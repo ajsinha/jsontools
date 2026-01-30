@@ -1,0 +1,375 @@
+#===============================================================================
+# SCHEMAMAP COMPREHENSIVE EXAMPLE - E-COMMERCE ORDER TRANSFORMATION
+#===============================================================================
+# Transforms legacy order format to modern API format
+# Demonstrates ALL SchemaMap capabilities:
+#   - Aliases for reusable transforms
+#   - Lookup tables for code mapping
+#   - External functions with multiple arguments
+#   - Array transformations
+#   - Computed fields
+#   - String manipulations
+#   - Data type conversions
+#===============================================================================
+
+@config {
+    null_handling   : omit
+    missing_fields  : skip
+}
+
+#===============================================================================
+# ALIASES - Reusable transformation chains
+#===============================================================================
+
+@aliases {
+    # Text cleaning
+    Clean           : trim | collapse_spaces
+    CleanUpper      : trim | uppercase
+    CleanLower      : trim | lowercase
+    CleanTitle      : trim | titlecase
+    
+    # Data type conversions  
+    ToMoney         : to_float | round(2)
+    ToPercent       : to_float | round(3)
+    ToInt           : to_int
+    ToBool          : to_bool
+}
+
+#===============================================================================
+# LOOKUP TABLES - Code to value mappings
+#===============================================================================
+
+@lookups {
+    # Order status codes
+    order_status : {
+        "NEW"       : "PENDING",
+        "PND"       : "PENDING", 
+        "CNF"       : "CONFIRMED",
+        "PROC"      : "PROCESSING",
+        "SHIP"      : "SHIPPED",
+        "DLVR"      : "DELIVERED",
+        "CXL"       : "CANCELLED"
+    }
+    
+    # Customer types
+    customer_type : {
+        "P"         : "INDIVIDUAL",
+        "B"         : "BUSINESS",
+        "G"         : "GOVERNMENT"
+    }
+    
+    # Gender codes
+    gender : {
+        "M"         : "MALE",
+        "F"         : "FEMALE",
+        "O"         : "OTHER"
+    }
+    
+    # Loyalty tiers
+    loyalty_tier : {
+        "B"         : "BRONZE",
+        "S"         : "SILVER",
+        "G"         : "GOLD",
+        "P"         : "PLATINUM",
+        "D"         : "DIAMOND"
+    }
+    
+    # Contact preferences
+    contact_pref : {
+        "E"         : "EMAIL",
+        "P"         : "PHONE",
+        "S"         : "SMS"
+    }
+    
+    # Payment methods
+    payment_method : {
+        "CC"        : "CREDIT_CARD",
+        "DC"        : "DEBIT_CARD",
+        "PP"        : "PAYPAL",
+        "LOYALTY"   : "LOYALTY_POINTS",
+        "GC"        : "GIFT_CARD"
+    }
+    
+    # Countries
+    country_name : {
+        "US"        : "United States",
+        "CA"        : "Canada",
+        "MX"        : "Mexico",
+        "UK"        : "United Kingdom"
+    }
+}
+
+#===============================================================================
+# ORDER HEADER
+#===============================================================================
+
+# Generate unique order ID using external function
+@compute(generate_order_id(header.orderNumber, header.channel))     : orderId
+
+header.orderNumber                                                  : orderNumber | @Clean
+
+# Parse date + time to ISO 8601 using multi-argument function
+@compute(parse_datetime(header.orderDate, header.orderTime))        : orderTimestamp
+
+# Map status using lookup
+header.status                                                       : status | @CleanUpper | lookup(@order_status)
+
+# Channel info
+header.channel                                                      : channel.type | @CleanUpper
+header.storeCode                                                    : channel.storeId
+header.register                                                     : channel.terminalId
+header.associateId                                                  : channel.associateId
+
+# Order flags (convert Y/N to boolean)
+header.giftOrder                                                    : flags.isGift | @ToBool
+header.priorityCode                                                 : flags.isPriority | @ToBool
+
+# Clean notes
+header.orderNotes                                                   : notes | @Clean
+
+#===============================================================================
+# CUSTOMER PROFILE
+#===============================================================================
+
+customer.customerId                                                 : customer.customerId | @Clean
+customer.customerType                                               : customer.type | lookup(@customer_type)
+
+# Full name using multi-argument external function
+@compute(format_full_name(customer.firstName, customer.middleName, customer.lastName, customer.suffix)) : customer.profile.fullName
+
+# Individual name fields
+customer.firstName                                                  : customer.profile.firstName | @CleanTitle
+customer.middleName                                                 : customer.profile.middleName | @CleanTitle
+customer.lastName                                                   : customer.profile.lastName | @CleanTitle
+customer.suffix                                                     : customer.profile.suffix | @CleanUpper
+
+# Display name using external function
+@compute(format_display_name(customer.firstName, customer.lastName)) : customer.profile.displayName
+
+# Email - clean and validate
+@compute(clean_email(customer.email))                               : customer.profile.email
+
+# Date of birth - format conversion
+@compute(format_date(customer.birthDate))                           : customer.profile.dateOfBirth
+
+# Age calculation using external function
+@compute(calculate_age(customer.birthDate))                         : customer.profile.age
+
+# Gender mapping
+customer.gender                                                     : customer.profile.gender | lookup(@gender)
+
+# Masked SSN for security
+@compute(mask_ssn(customer.ssn))                                    : customer.profile.taxIdMasked
+
+#===============================================================================
+# CUSTOMER CONTACT
+#===============================================================================
+
+# Format phones using external function
+@compute(format_phone(customer.primaryPhone, "US"))                 : customer.contact.primaryPhone
+@compute(format_phone(customer.secondaryPhone, "US"))               : customer.contact.secondaryPhone
+
+# E.164 format for international
+@compute(format_phone_e164(customer.primaryPhone, "1"))             : customer.contact.primaryPhoneE164
+
+# Preferred contact method
+customer.preferredContact                                           : customer.contact.preferredMethod | lookup(@contact_pref)
+
+#===============================================================================
+# CUSTOMER PREFERENCES
+#===============================================================================
+
+customer.language                                                   : customer.preferences.language | @CleanUpper
+customer.currency                                                   : customer.preferences.currency | @CleanUpper
+customer.marketingOptIn                                             : customer.preferences.marketingOptIn | @ToBool
+customer.smsOptIn                                                   : customer.preferences.smsOptIn | @ToBool
+
+#===============================================================================
+# CUSTOMER LOYALTY
+#===============================================================================
+
+customer.loyaltyNumber                                              : customer.loyalty.memberId
+customer.loyaltyTier                                                : customer.loyalty.tier | lookup(@loyalty_tier)
+customer.loyaltyPoints                                              : customer.loyalty.points | @ToInt
+customer.lifetimeSpend                                              : customer.loyalty.lifetimeValue | @ToMoney
+
+# Calculate tier expiration using multi-argument function
+@compute(calculate_tier_expiration(customer.loyaltyTier, customer.loyaltyPoints)) : customer.loyalty.tierExpiration
+
+# Determine customer segment
+@compute(determine_customer_segment(customer.lifetimeSpend, customer.loyaltyTier)) : customer.loyalty.segment
+
+#===============================================================================
+# CUSTOMER ACCOUNT
+#===============================================================================
+
+customer.accountBalance                                             : customer.account.balance | @ToMoney
+customer.creditLimit                                                : customer.account.creditLimit | @ToMoney
+
+# Calculate available credit using multi-argument function
+@compute(calculate_credit_available(customer.creditLimit, customer.accountBalance)) : customer.account.creditAvailable
+
+#===============================================================================
+# BILLING ADDRESS
+#===============================================================================
+
+billTo.line1                                                        : addresses.billing.line1 | @CleanTitle
+billTo.line2                                                        : addresses.billing.line2 | @CleanTitle
+billTo.line3                                                        : addresses.billing.line3 | @CleanTitle
+billTo.city                                                         : addresses.billing.city | @CleanTitle
+billTo.state                                                        : addresses.billing.state | @CleanUpper
+billTo.zip                                                          : addresses.billing.postalCode
+billTo.country                                                      : addresses.billing.country | @CleanUpper
+billTo.country                                                      : addresses.billing.countryName | lookup(@country_name)
+billTo.validated                                                    : addresses.billing.isValidated | @ToBool
+billTo.residential                                                  : addresses.billing.isResidential | @ToBool
+
+# Format full address using multi-argument function
+@compute(format_address(billTo.line1, billTo.line2, billTo.line3, billTo.city, billTo.state, billTo.zip, billTo.country)) : addresses.billing.formatted
+
+#===============================================================================
+# SHIPPING ADDRESS
+#===============================================================================
+
+shipTo.line1                                                        : addresses.shipping.line1 | @CleanTitle
+shipTo.line2                                                        : addresses.shipping.line2 | @CleanTitle
+shipTo.line3                                                        : addresses.shipping.line3 | @CleanTitle
+shipTo.city                                                         : addresses.shipping.city | @CleanTitle
+shipTo.state                                                        : addresses.shipping.state | @CleanUpper
+shipTo.zip                                                          : addresses.shipping.postalCode
+shipTo.country                                                      : addresses.shipping.country | @CleanUpper
+shipTo.country                                                      : addresses.shipping.countryName | lookup(@country_name)
+shipTo.validated                                                    : addresses.shipping.isValidated | @ToBool
+shipTo.residential                                                  : addresses.shipping.isResidential | @ToBool
+shipTo.instructions                                                 : addresses.shipping.instructions | @Clean
+
+# Format shipping address
+@compute(format_address(shipTo.line1, shipTo.line2, shipTo.line3, shipTo.city, shipTo.state, shipTo.zip, shipTo.country)) : addresses.shipping.formatted
+
+#===============================================================================
+# LINE ITEMS (Array Transformation)
+#===============================================================================
+
+items[*].lineNum                                                    : lineItems[*].lineNumber | @ToInt
+items[*].sku                                                        : lineItems[*].sku | @CleanUpper
+items[*].upc                                                        : lineItems[*].upc
+items[*].description                                                : lineItems[*].name | @CleanTitle
+items[*].category                                                   : lineItems[*].category | @CleanUpper
+items[*].subcategory                                                : lineItems[*].subcategory | @CleanUpper
+items[*].brand                                                      : lineItems[*].brand | @CleanTitle
+items[*].modelNumber                                                : lineItems[*].model | @CleanUpper
+items[*].color                                                      : lineItems[*].variant.color | @CleanTitle
+items[*].size                                                       : lineItems[*].variant.size | @CleanUpper
+
+# Quantities
+items[*].quantityOrdered                                            : lineItems[*].quantity.ordered | @ToInt
+items[*].quantityShipped                                            : lineItems[*].quantity.shipped | @ToInt
+items[*].quantityBackordered                                        : lineItems[*].quantity.backordered | @ToInt
+
+# Pricing
+items[*].unitPrice                                                  : lineItems[*].pricing.unitPrice | @ToMoney
+items[*].unitCost                                                   : lineItems[*].pricing.unitCost | @ToMoney
+items[*].discountPercent                                            : lineItems[*].pricing.discountPercent | @ToPercent
+items[*].discountAmount                                             : lineItems[*].pricing.discountAmount | @ToMoney
+items[*].lineTotal                                                  : lineItems[*].pricing.lineTotal | @ToMoney
+items[*].taxRate                                                    : lineItems[*].pricing.taxRate | @ToPercent
+items[*].taxAmount                                                  : lineItems[*].pricing.taxAmount | @ToMoney
+
+# Fulfillment
+items[*].fulfillmentStatus                                          : lineItems[*].fulfillment.status | @CleanUpper
+items[*].shipDate                                                   : lineItems[*].fulfillment.shipDate
+items[*].trackingNumber                                             : lineItems[*].fulfillment.trackingNumber
+items[*].carrier                                                    : lineItems[*].fulfillment.carrier | @CleanUpper
+
+# Attributes
+items[*].weight                                                     : lineItems[*].attributes.weight | @ToMoney
+items[*].hazmat                                                     : lineItems[*].attributes.isHazmat | @ToBool
+items[*].serialNumber                                               : lineItems[*].attributes.serialNumber
+
+# Gift options
+items[*].giftWrap                                                   : lineItems[*].gift.isWrapped | @ToBool
+items[*].giftMessage                                                : lineItems[*].gift.message | @Clean
+
+# Warranty
+items[*].warrantyCode                                               : lineItems[*].warranty.code
+items[*].warrantyPrice                                              : lineItems[*].warranty.price | @ToMoney
+
+#===============================================================================
+# PAYMENTS (Array Transformation)
+#===============================================================================
+
+payments[*].sequence                                                : payments[*].sequence | @ToInt
+payments[*].method                                                  : payments[*].method | lookup(@payment_method)
+payments[*].amount                                                  : payments[*].amount | @ToMoney
+payments[*].cardType                                                : payments[*].card.type | @CleanUpper
+payments[*].lastFour                                                : payments[*].card.lastFour
+payments[*].expiration                                              : payments[*].card.expiration
+payments[*].cardHolder                                              : payments[*].card.holderName | @CleanUpper
+payments[*].authCode                                                : payments[*].transaction.authCode
+payments[*].transactionId                                           : payments[*].transaction.id
+payments[*].avsResult                                               : payments[*].verification.avs
+payments[*].cvvResult                                               : payments[*].verification.cvv
+
+#===============================================================================
+# ORDER TOTALS
+#===============================================================================
+
+totals.subtotal                                                     : totals.subtotal | @ToMoney
+totals.discountTotal                                                : totals.discount | @ToMoney
+totals.taxTotal                                                     : totals.tax | @ToMoney
+totals.shippingCost                                                 : totals.shipping | @ToMoney
+totals.giftWrapTotal                                                : totals.giftWrap | @ToMoney
+totals.warrantyTotal                                                : totals.warranty | @ToMoney
+totals.grandTotal                                                   : totals.grandTotal | @ToMoney
+totals.amountPaid                                                   : totals.paid | @ToMoney
+totals.balanceDue                                                   : totals.due | @ToMoney
+
+# Calculated totals using external functions with array parameter
+@compute(count_items(items))                                        : totals.lineItemCount
+@compute(sum_quantity(items, "quantityOrdered"))                    : totals.totalQuantity
+@compute(sum_weighted_field(items, "weight", "quantityOrdered"))    : totals.totalWeight
+
+# Calculate effective tax rate
+@compute(calculate_effective_rate(totals.taxTotal, totals.subtotal)) : totals.effectiveTaxRate
+
+# Calculate total savings
+@compute(calculate_savings(totals.discountTotal, totals.shippingDiscount, 0)) : totals.totalSavings
+
+#===============================================================================
+# SHIPPING INFO
+#===============================================================================
+
+shipping.method                                                     : shipping.method | @CleanUpper
+shipping.carrier                                                    : shipping.carrier | @CleanUpper
+shipping.speed                                                      : shipping.speed | @Clean
+shipping.packageCount                                               : shipping.packageCount | @ToInt
+shipping.totalWeight                                                : shipping.totalWeight | @ToMoney
+shipping.insuranceAmount                                            : shipping.insuranceAmount | @ToMoney
+shipping.signatureRequired                                          : shipping.signatureRequired | @ToBool
+shipping.trackingNumbers                                            : shipping.trackingNumbers
+
+# Format estimated delivery date
+@compute(format_date(shipping.estimatedDelivery))                   : shipping.estimatedDelivery
+
+#===============================================================================
+# PROMOTIONS (Array Transformation)
+#===============================================================================
+
+promotions[*].code                                                  : promotions[*].code | @CleanUpper
+promotions[*].description                                           : promotions[*].description | @Clean
+promotions[*].type                                                  : promotions[*].type | @CleanUpper
+promotions[*].value                                                 : promotions[*].value | @ToMoney
+promotions[*].savings                                               : promotions[*].savings | @ToMoney
+
+#===============================================================================
+# METADATA
+#===============================================================================
+
+"2.0"                                                               : metadata.schemaVersion | constant
+audit.source                                                        : metadata.sourceSystem | @CleanUpper
+@now                                                                : metadata.transformedAt
+@uuid                                                               : metadata.transformationId
+
+#===============================================================================
+# END OF TRANSFORMATION
+#===============================================================================

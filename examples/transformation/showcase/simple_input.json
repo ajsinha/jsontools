@@ -1,0 +1,22 @@
+{
+    "user": {
+        "id": "USR-12345",
+        "status": "A",
+        "first_name": "JOHN",
+        "last_name": "DOE",
+        "email": "  JOHN.DOE@EXAMPLE.COM  ",
+        "age": "35",
+        "mobile": null,
+        "phone": "555-1234",
+        "work": "555-5678",
+        "address": {
+            "street": "  123 Main Street  ",
+            "city": "new york",
+            "country": "US"
+        },
+        "tags": ["TECHNOLOGY", "FINANCE", "TRAVEL"]
+    },
+    "order": {
+        "total": "1234.567"
+    }
+}

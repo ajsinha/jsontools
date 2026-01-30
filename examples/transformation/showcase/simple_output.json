@@ -1,0 +1,22 @@
+{
+  "userId": "USR-12345",
+  "status": "ACTIVE",
+  "fullName": "John Doe",
+  "email": "john.doe@example.com",
+  "age": 35,
+  "orderTotal": 1234.57,
+  "address": {
+    "line1": "123 Main Street",
+    "city": "New York",
+    "country": "United States"
+  },
+  "interests": [
+    "technology",
+    "finance",
+    "travel"
+  ],
+  "primaryPhone": "555-1234",
+  "processedAt": "2026-01-30T02:39:31.355398Z",
+  "transactionId": "de118307-2e31-45d8-85a8-c63a65297c7d",
+  "version": "1.0"
+}
