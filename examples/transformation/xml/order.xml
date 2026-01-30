@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order id="ORD-2024-001" status="SHIPPED">
+    <customer type="B">
+        <name>ACME Corporation</name>
+        <email>orders@acme.com</email>
+        <phone>555-1234</phone>
+    </customer>
+    <items>
+        <item sku="WIDGET-001">
+            <name>Premium Widget</name>
+            <quantity>10</quantity>
+            <price>29.99</price>
+        </item>
+        <item sku="GADGET-002">
+            <name>Super Gadget</name>
+            <quantity>5</quantity>
+            <price>49.99</price>
+        </item>
+    </items>
+    <shipping>
+        <method>EXPRESS</method>
+        <address>
+            <line1>123 BUSINESS AVE</line1>
+            <city>NEW YORK</city>
+            <state>NY</state>
+            <zip>10001</zip>
+        </address>
+    </shipping>
+    <totals>
+        <subtotal>549.85</subtotal>
+        <tax>48.74</tax>
+        <shipping_cost>25.00</shipping_cost>
+        <total>623.59</total>
+    </totals>
+</order>

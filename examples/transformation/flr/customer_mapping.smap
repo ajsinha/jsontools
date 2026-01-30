@@ -1,0 +1,33 @@
+# Customer Fixed Length Record Transformation
+# Transforms mainframe-style FLR data to modern JSON format
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    CleanTitle  : trim | titlecase
+    CleanLower  : trim | lowercase
+    ToMoney     : to_float | round(2)
+}
+
+@lookups {
+    status_codes : {
+        "A" : "ACTIVE",
+        "I" : "INACTIVE",
+        "P" : "PENDING"
+    }
+}
+
+# Field mappings - FLR fields map as top-level after conversion
+id              : customerId
+name            : fullName | @CleanTitle
+email           : contact.email | @CleanLower
+status          : accountStatus | lookup(@status_codes)
+balance         : account.balance | @ToMoney
+
+# Computed fields
+@now            : processedAt
+@uuid           : recordId
+"FLR"           : sourceFormat | constant
+"MAINFRAME"     : sourceSystem | constant

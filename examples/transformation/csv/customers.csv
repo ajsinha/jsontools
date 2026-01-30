@@ -1,0 +1,5 @@
+id,first_name,last_name,email,status,age,balance
+1,JOHN,DOE,JOHN.DOE@EXAMPLE.COM,A,35,1234.56
+2,JANE,SMITH,  jane.smith@test.org  ,I,28,567.89
+3,BOB,WILSON,bob@company.co,P,45,9999.99
+4,ALICE,JOHNSON,alice.j@mail.net,A,31,0.00

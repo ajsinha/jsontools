@@ -1,0 +1,53 @@
+# Order XML to JSON Transformation
+# Demonstrates XML transformation capabilities
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    Clean       : trim | collapse_spaces
+    CleanTitle  : trim | titlecase
+    ToMoney     : to_float | round(2)
+}
+
+@lookups {
+    customer_types : {
+        "B" : "BUSINESS",
+        "P" : "PERSONAL",
+        "G" : "GOVERNMENT"
+    }
+}
+
+# Order header - note XML attributes use @ prefix
+order.@id                       : orderId
+order.@status                   : status
+
+# Customer info
+order.customer.@type            : customer.type | lookup(@customer_types)
+order.customer.name             : customer.companyName | @Clean
+order.customer.email            : customer.contact.email | trim | lowercase
+order.customer.phone            : customer.contact.phone
+
+# Items array (XML repeated elements become arrays)
+order.items.item[*].@sku        : lineItems[*].sku
+order.items.item[*].name        : lineItems[*].description | @CleanTitle
+order.items.item[*].quantity    : lineItems[*].qty | to_int
+order.items.item[*].price       : lineItems[*].unitPrice | @ToMoney
+
+# Shipping
+order.shipping.method           : shipping.method
+order.shipping.address.line1    : shipping.address.street | @CleanTitle
+order.shipping.address.city     : shipping.address.city | @CleanTitle
+order.shipping.address.state    : shipping.address.state
+order.shipping.address.zip      : shipping.address.postalCode
+
+# Totals
+order.totals.subtotal           : totals.subtotal | @ToMoney
+order.totals.tax                : totals.tax | @ToMoney
+order.totals.shipping_cost      : totals.shippingCost | @ToMoney
+order.totals.total              : totals.grandTotal | @ToMoney
+
+# Computed fields
+@now                            : processedAt
+"XML"                           : sourceFormat | constant

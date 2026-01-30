@@ -42,3 +42,80 @@
 ### Documentation
 - Updated all documentation to reflect new name
 - Updated code examples with new import paths
+
+## [1.6.0] - 2026-01-30
+
+### Added
+- **CSV Support**: Transform CSV files using SchemaMap DSL
+  - New `transform_csv.py` main script
+  - CSVConverter class with full options (delimiter, encoding, type inference)
+  - CSVPresets for common formats (excel, tsv, pipe, semicolon)
+  - Batch transformation of CSV records
+  
+- **XML Support**: Transform XML files using SchemaMap DSL
+  - New `transform_xml.py` main script
+  - XMLConverter class with full options (attribute prefix, namespaces, arrays)
+  - XMLPresets for common formats (standard, soap, data_records)
+  - Support for extracting multiple records from XML
+  - Automatic handling of XML attributes (@attr) and text content (#text)
+
+- **Converter Module**: `jsonchamp.transformation.converters`
+  - `csv_to_json()` - Convert CSV to JSON
+  - `xml_to_json()` - Convert XML to JSON
+  - `xml_to_json_records()` - Extract records from XML
+  - `transform_csv()` - One-step CSV transformation
+  - `transform_xml()` - One-step XML transformation
+
+### Documentation
+- Updated SCHEMAMAP.md with CSV and XML transformation sections
+- Added examples for CSV and XML in examples/transformation/
+
+### Examples
+- `examples/transformation/csv/customers.csv` - Sample CSV data
+- `examples/transformation/csv/customer_mapping.smap` - CSV mapping example
+- `examples/transformation/xml/order.xml` - Sample XML data
+- `examples/transformation/xml/order_mapping.smap` - XML mapping example
+
+## [1.7.0] - 2026-01-30
+
+### Added
+- **Fixed Length Record (FLR) Support**: Transform mainframe-style fixed-width files
+  - New `transform_flr.py` main script
+  - `FLRConverter` class with full type inference (string, integer, decimal, date, boolean)
+  - `RecordLayout` class for defining field positions and lengths
+  - `FieldDefinition` dataclass for individual field specifications
+  - Support for JSON and simple text layout file formats
+  - COBOL-style position numbering (1-based)
+  - Implied decimal handling (common in COBOL)
+  - Date format conversion (YYYYMMDD, MMDDYYYY, etc.)
+  - Layout validation for overlap/gap detection
+  - Presets for mainframe, COBOL, and ASCII formats
+  
+- **Dictionary Transformation Script**: `transform_dict.py`
+  - Unified interface for dict/JSON transformation
+  - Support for both interpreted and compiled modes
+  - Inline JSON data support with `--data` flag
+  - Batch transformation with `--batch` flag
+  - Built-in benchmarking with `--benchmark` flag
+
+- **Compiled Transformer Functions**:
+  - `create_compiled_transformer()` - Create reusable compiled transformer
+  - `compile_and_transform()` - One-step compile and transform
+  - Works with all input formats (JSON, CSV, XML, FLR)
+  - 5-10x faster than interpreted mode
+
+- **New Convenience Functions**:
+  - `transform_flr()` - One-step FLR transformation
+  - `flr_to_json()` - Convert FLR to JSON without transformation
+
+### Documentation
+- Updated SCHEMAMAP.md with FLR transformation sections
+- Added comprehensive FLR layout file format documentation
+- Added compiled transformation documentation
+- Added examples for FLR in `examples/transformation/flr/`
+
+### Examples
+- `examples/transformation/flr/customers.dat` - Sample FLR data
+- `examples/transformation/flr/customer_layout.json` - JSON layout file
+- `examples/transformation/flr/customer_layout.txt` - Simple text layout file
+- `examples/transformation/flr/customer_mapping.smap` - FLR mapping example

@@ -1,0 +1,39 @@
+{
+    "record_length": 82,
+    "fields": [
+        {
+            "name": "id",
+            "start": 1,
+            "length": 10,
+            "data_type": "integer",
+            "trim": true
+        },
+        {
+            "name": "name",
+            "start": 11,
+            "length": 30,
+            "data_type": "string",
+            "trim": true
+        },
+        {
+            "name": "email",
+            "start": 41,
+            "length": 32,
+            "data_type": "string",
+            "trim": true
+        },
+        {
+            "name": "status",
+            "start": 73,
+            "length": 1,
+            "data_type": "string"
+        },
+        {
+            "name": "balance",
+            "start": 74,
+            "length": 10,
+            "data_type": "decimal",
+            "decimal_places": 2
+        }
+    ]
+}

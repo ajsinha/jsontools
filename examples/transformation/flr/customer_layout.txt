@@ -1,0 +1,10 @@
+# Fixed Length Record Layout for Customer Data
+# Format: field_name,start,length,type[,decimal_places_or_date_format]
+#
+# Note: start position is 1-based (like COBOL)
+#
+id,1,10,integer
+name,11,30,string
+email,41,32,string
+status,73,1,string
+balance,74,10,decimal,2

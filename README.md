@@ -1,12 +1,13 @@
-# JsonChamp v1.4.0
+# JsonChamp v1.7.0
 
 ```
 +==============================================================================+
 |                                                                              |
-|                           JsonChamp v1.4.0                                   |
+|                           JsonChamp v1.7.0                                   |
 |                                                                              |
 |            Commercial Grade JSON Schema to Python Code Generator             |
 |                      with SchemaMap Transformation DSL                       |
+|           Supports JSON, CSV, XML, and Fixed Length Record Inputs            |
 |                                                                              |
 |                  Copyright (C) 2025-2030, All Rights Reserved                |
 |                      Ashutosh Sinha (ajsinha@gmail.com)                      |
@@ -35,12 +36,95 @@
 - **Reference Resolution**: Handle complex `$ref` references including remote schemas
 - **Module Generation**: Generate complete Python modules from schema folders
 - **SchemaMap Transformation**: Transform JSON between schemas using a declarative DSL
+- **Multi-Format Input**: Support for JSON, CSV, XML, and Fixed Length Records (FLR)
 - **External Python Functions**: Call custom Python functions from SchemaMap DSL
 - **Code Compilation**: Compile SchemaMap to optimized Python code (5-10x faster!)
 
 ---
 
-## What's New in v1.4.0
+## What's New in v1.7.0
+
+### Fixed Length Record (FLR) Support
+
+Transform mainframe-style fixed-width files using SchemaMap DSL:
+
+```bash
+# Transform FLR with JSON layout
+python transform_flr.py mapping.smap customers.dat --layout layout.json
+
+# EBCDIC encoded mainframe file
+python transform_flr.py mapping.smap mainframe.dat --layout layout.json --encoding cp037
+```
+
+**Layout Definition (JSON):**
+```json
+{
+  "fields": [
+    {"name": "id", "start": 1, "length": 10, "data_type": "integer"},
+    {"name": "name", "start": 11, "length": 30},
+    {"name": "amount", "start": 41, "length": 12, "data_type": "decimal", "decimal_places": 2}
+  ]
+}
+```
+
+**Python API:**
+```python
+from jsonchamp.transformation import transform_flr, RecordLayout
+
+# With JSON layout file
+results = transform_flr("customers.dat", "mapping.smap", "layout.json")
+
+# Build layout programmatically
+layout = RecordLayout()
+layout.add_field("id", 1, 10, data_type="integer")
+layout.add_field("name", 11, 30)
+results = transform_flr("data.dat", "mapping.smap", layout)
+```
+
+### Compiled Transformers for All Formats
+
+Use compiled transformers (5-10x faster) with any input format:
+
+```python
+from jsonchamp.transformation import create_compiled_transformer, csv_to_json, flr_to_json
+
+# Create compiled transformer once
+transformer = create_compiled_transformer("mapping.smap")
+
+# Use with any format
+result = transformer.transform({"name": "John"})           # Dict
+results = [transformer.transform(r) for r in csv_to_json("data.csv")]  # CSV
+results = [transformer.transform(r) for r in flr_to_json("data.dat", "layout.json")]  # FLR
+```
+
+### CSV and XML Input Support
+
+Transform CSV and XML files using the same SchemaMap DSL:
+
+```bash
+# Transform CSV
+python transform_csv.py mapping.smap customers.csv --output result.json
+
+# Transform XML
+python transform_xml.py mapping.smap orders.xml --output result.json
+
+# Extract multiple records from XML
+python transform_xml.py mapping.smap orders.xml --records "order" --output results.json
+```
+
+**Python API:**
+```python
+from jsonchamp.transformation import transform_csv, transform_xml
+
+# CSV transformation
+results = transform_csv("customers.csv", "mapping.smap")
+
+# XML transformation (single document)
+result = transform_xml("order.xml", "mapping.smap")
+
+# XML transformation (multiple records)
+results = transform_xml("orders.xml", "mapping.smap", element_path="orders/order")
+```
 
 ### Compiled Transformations (5-10x Faster!)
 
@@ -171,6 +255,7 @@ python transform.py --benchmark mapping.smap input.json --iterations 10000
 
 ### Key Features
 
+- **Multi-Format Input**: Transform JSON, CSV, XML, and Fixed Length Record files
 - **90+ Built-in Functions**: String, numeric, date, array transforms
 - **External Python Functions**: Call custom functions from DSL
 - **Aliases**: Define reusable transform chains
@@ -178,7 +263,7 @@ python transform.py --benchmark mapping.smap input.json --iterations 10000
 - **Array Support**: Transform arrays element-by-element
 - **Computed Fields**: Generate values with expressions
 - **Schema Validation**: Validate output against JSON Schema
-- **Code Compilation**: Generate optimized Python code
+- **Code Compilation**: Generate optimized Python code (5-10x faster)
 
 See [docs/SCHEMAMAP.md](docs/SCHEMAMAP.md) for full documentation.
 
@@ -186,13 +271,49 @@ See [docs/SCHEMAMAP.md](docs/SCHEMAMAP.md) for full documentation.
 
 ## CLI Reference
 
-### Transform Data
+### Transform JSON Data
 
 ```bash
 python transform.py mapping.smap input.json
 python transform.py mapping.smap input.json --output result.json
 python transform.py mapping.smap input.json --schema target_schema.json
 python transform.py mapping.smap input.json --functions custom_funcs.py
+```
+
+### Transform CSV Data
+
+```bash
+python transform_csv.py mapping.smap input.csv
+python transform_csv.py mapping.smap input.csv --output result.json
+python transform_csv.py mapping.smap input.csv --delimiter ";" --encoding utf-8
+python transform_csv.py mapping.smap input.tsv --preset tsv
+```
+
+### Transform XML Data
+
+```bash
+python transform_xml.py mapping.smap input.xml
+python transform_xml.py mapping.smap input.xml --output result.json
+python transform_xml.py mapping.smap data.xml --records "items/item"
+python transform_xml.py mapping.smap data.xml --strip-namespaces --no-root
+```
+
+### Transform Fixed Length Record (FLR) Data
+
+```bash
+python transform_flr.py mapping.smap data.dat --layout layout.json
+python transform_flr.py mapping.smap data.dat --layout layout.txt --output result.json
+python transform_flr.py mapping.smap mainframe.dat --layout layout.json --encoding cp037
+python transform_flr.py mapping.smap data.dat --layout layout.json --skip-header 1
+```
+
+### Transform Dict/JSON with Compiled Mode
+
+```bash
+python transform_dict.py mapping.smap input.json
+python transform_dict.py mapping.smap input.json --compiled    # 5-10x faster
+python transform_dict.py mapping.smap --data '{"name": "John"}'
+python transform_dict.py mapping.smap input.json --benchmark
 ```
 
 ### Compile to Python
@@ -227,16 +348,24 @@ jsonchamp/
 │   └── transformation/          # SchemaMap module
 │       ├── parser/              # Lexer, parser, AST
 │       ├── engine/              # Transformer, evaluator
-│       └── compiler/            # Python code generator
+│       ├── compiler/            # Python code generator
+│       └── converters/          # CSV/XML/FLR converters
 ├── examples/
 │   ├── schemas/                 # 22+ JSON schemas
 │   └── transformation/          # SchemaMap examples
 │       ├── source_data/         # Input JSON files
 │       ├── mappings/            # .smap files
 │       ├── compiled/            # Generated Python code
+│       ├── csv/                 # CSV examples
+│       ├── xml/                 # XML examples
+│       ├── flr/                 # Fixed Length Record examples
 │       └── target_schemas/      # Output schemas
 ├── docs/                        # Documentation
-├── transform.py                 # CLI runner & compiler
+├── transform.py                 # JSON transformation CLI
+├── transform_csv.py             # CSV transformation CLI
+├── transform_xml.py             # XML transformation CLI
+├── transform_flr.py             # FLR transformation CLI
+├── transform_dict.py            # Dict transformation CLI (compiled support)
 └── README.md
 ```
 

@@ -1,6 +1,6 @@
 # SchemaMap DSL - Complete Syntax Reference
 
-**Version:** 1.4.2  
+**Version:** 1.7.0  
 **Copyright:** © 2025-2030, All Rights Reserved - Ashutosh Sinha (ajsinha@gmail.com)  
 **Last Updated:** January 2026
 
@@ -31,15 +31,19 @@
 10. [Computed Fields](#10-computed-fields)
 11. [External Functions](#11-external-functions)
 12. [Code Compilation](#12-code-compilation)
-13. [CLI Reference](#13-cli-reference)
-14. [Python API Reference](#14-python-api-reference)
-15. [Syntax Quick Reference Card](#15-syntax-quick-reference-card)
+13. [CSV Transformations](#13-csv-transformations)
+14. [XML Transformations](#14-xml-transformations)
+15. [Fixed Length Record (FLR) Transformations](#15-fixed-length-record-flr-transformations)
+16. [Compiled Transformations](#16-compiled-transformations)
+17. [CLI Reference](#17-cli-reference)
+18. [Python API Reference](#18-python-api-reference)
+19. [Syntax Quick Reference Card](#19-syntax-quick-reference-card)
 
 ---
 
 ## 1. Overview
 
-SchemaMap is a domain-specific language (DSL) for transforming JSON documents between schemas. It provides a declarative, readable syntax for defining field mappings and transformations.
+SchemaMap is a domain-specific language (DSL) for transforming data between schemas. It provides a declarative, readable syntax for defining field mappings and transformations. SchemaMap supports JSON, CSV, and XML as input formats.
 
 ### Key Features
 
@@ -48,6 +52,7 @@ SchemaMap is a domain-specific language (DSL) for transforming JSON documents be
 | Declarative Syntax | Clear `source : target` mapping notation |
 | Transform Chains | Pipe-based function chaining (`\| trim \| lowercase`) |
 | Reusable Aliases | Define common transform patterns once with `@aliases` |
+| Multi-Format Input | Support for JSON, CSV, and XML input files |
 | Lookup Tables | Map codes to values with `@lookups` |
 | Array Support | Transform arrays element-by-element with `[*]` |
 | Computed Fields | Generate values using `@compute`, `@now`, `@uuid` |
@@ -865,7 +870,527 @@ python transform.py --benchmark mapping.smap input.json --iterations 10000
 
 ---
 
-## 13. CLI Reference
+## 13. CSV Transformations
+
+SchemaMap can transform CSV files by converting each row to JSON, then applying the mapping rules.
+
+### CSV to JSON Conversion
+
+CSV columns become top-level JSON fields:
+
+**Input CSV:**
+```csv
+id,name,email,status
+1,John Doe,john@example.com,A
+2,Jane Smith,jane@test.org,I
+```
+
+**Converted JSON (per row):**
+```json
+{"id": 1, "name": "John Doe", "email": "john@example.com", "status": "A"}
+{"id": 2, "name": "Jane Smith", "email": "jane@test.org", "status": "I"}
+```
+
+### CSV Transformation CLI
+
+```bash
+# Basic CSV transformation
+python transform_csv.py mapping.smap customers.csv
+
+# With output file
+python transform_csv.py mapping.smap data.csv --output result.json
+
+# Custom delimiter (semicolon)
+python transform_csv.py mapping.smap data.csv --delimiter ";"
+
+# Tab-separated values
+python transform_csv.py mapping.smap data.tsv --delimiter "\t"
+
+# CSV without header
+python transform_csv.py mapping.smap data.csv --no-header --columns "id,name,email"
+
+# Use preset format
+python transform_csv.py mapping.smap data.csv --preset excel
+python transform_csv.py mapping.smap data.tsv --preset tsv
+```
+
+### CSV CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `--delimiter, -d` | Field delimiter (default: `,`) |
+| `--quotechar, -q` | Quote character (default: `"`) |
+| `--no-header` | CSV has no header row |
+| `--columns` | Column names (comma-separated, for --no-header) |
+| `--skip-rows` | Skip N rows at start |
+| `--encoding` | File encoding (default: utf-8) |
+| `--no-infer-types` | Keep all values as strings |
+| `--preset` | Use preset format (excel, tsv, pipe, semicolon) |
+
+### CSV Python API
+
+```python
+from jsonchamp.transformation import transform_csv, load_mapping
+from jsonchamp.transformation.converters import CSVConverter, csv_to_json
+
+# One-step transformation
+results = transform_csv("customers.csv", "mapping.smap")
+
+# Manual conversion and transformation
+records = csv_to_json("customers.csv", delimiter=';')
+transformer = load_mapping("mapping.smap")
+results = [transformer.transform(r) for r in records]
+
+# With options
+converter = CSVConverter(
+    delimiter=';',
+    encoding='utf-8',
+    infer_types=True,
+    strip_whitespace=True
+)
+records = converter.convert_file("data.csv")
+```
+
+### CSV Mapping Example
+
+```
+# customer_mapping.smap - transform CSV customer records
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    CleanTitle : trim | titlecase
+}
+
+@lookups {
+    status_codes : { "A": "ACTIVE", "I": "INACTIVE" }
+}
+
+# CSV columns map as top-level fields
+id              : customerId | to_int
+name            : fullName | @CleanTitle
+email           : contact.email | trim | lowercase
+status          : accountStatus | lookup(@status_codes)
+
+@now            : processedAt
+```
+
+---
+
+## 14. XML Transformations
+
+SchemaMap can transform XML files by converting XML elements to JSON, then applying the mapping rules.
+
+### XML to JSON Conversion
+
+XML elements become JSON objects. Attributes use `@` prefix, text content uses `#text` key.
+
+**Input XML:**
+```xml
+<order id="ORD-001" status="SHIPPED">
+    <customer type="B">
+        <name>ACME Corp</name>
+        <email>orders@acme.com</email>
+    </customer>
+    <items>
+        <item sku="W-001">
+            <name>Widget</name>
+            <quantity>10</quantity>
+        </item>
+    </items>
+</order>
+```
+
+**Converted JSON:**
+```json
+{
+  "order": {
+    "@id": "ORD-001",
+    "@status": "SHIPPED",
+    "customer": {
+      "@type": "B",
+      "name": "ACME Corp",
+      "email": "orders@acme.com"
+    },
+    "items": {
+      "item": {
+        "@sku": "W-001",
+        "name": "Widget",
+        "quantity": 10
+      }
+    }
+  }
+}
+```
+
+### XML Transformation CLI
+
+```bash
+# Basic XML transformation
+python transform_xml.py mapping.smap order.xml
+
+# With output file
+python transform_xml.py mapping.smap order.xml --output result.json
+
+# Process multiple records from XML
+python transform_xml.py mapping.smap orders.xml --records "order"
+
+# Strip XML namespaces
+python transform_xml.py mapping.smap soap_response.xml --strip-namespaces
+
+# Don't preserve root element
+python transform_xml.py mapping.smap data.xml --no-root
+
+# Custom attribute prefix
+python transform_xml.py mapping.smap data.xml --attr-prefix "_"
+
+# Force elements to always be arrays
+python transform_xml.py mapping.smap data.xml --always-array "item,option"
+```
+
+### XML CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `--records, -r` | XPath to record elements for batch processing |
+| `--attr-prefix` | Prefix for attributes (default: `@`) |
+| `--text-key` | Key for text content (default: `#text`) |
+| `--strip-namespaces` | Remove namespace prefixes |
+| `--no-root` | Don't preserve root element |
+| `--no-infer-types` | Keep all values as strings |
+| `--always-array` | Elements that should always be arrays |
+| `--preset` | Use preset format (standard, soap, no_attrs) |
+
+### XML Python API
+
+```python
+from jsonchamp.transformation import transform_xml, load_mapping
+from jsonchamp.transformation.converters import XMLConverter, xml_to_json, xml_to_json_records
+
+# One-step transformation
+result = transform_xml("order.xml", "mapping.smap")
+
+# Multiple records
+results = transform_xml("orders.xml", "mapping.smap", element_path="orders/order")
+
+# Manual conversion
+data = xml_to_json("order.xml", strip_namespaces=True)
+transformer = load_mapping("mapping.smap")
+result = transformer.transform(data)
+
+# Extract records from XML
+records = xml_to_json_records("orders.xml", "order")
+results = [transformer.transform(r) for r in records]
+```
+
+### XML Mapping Example
+
+```
+# order_mapping.smap - transform XML order
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    CleanTitle : trim | titlecase
+    ToMoney    : to_float | round(2)
+}
+
+# XML attributes use @ prefix
+order.@id                   : orderId
+order.@status               : status
+
+# Nested elements
+order.customer.@type        : customer.type
+order.customer.name         : customer.companyName | @CleanTitle
+order.customer.email        : customer.contact.email | lowercase
+
+# Array elements
+order.items.item[*].@sku    : lineItems[*].sku
+order.items.item[*].name    : lineItems[*].description
+order.items.item[*].quantity : lineItems[*].qty | to_int
+
+@now                        : processedAt
+```
+
+---
+
+## 15. Fixed Length Record (FLR) Transformations
+
+SchemaMap can transform fixed-length record files (common in mainframe/COBOL systems) by converting each record to JSON based on a layout definition.
+
+### FLR to JSON Conversion
+
+Fixed-length records have fields at specific positions with fixed widths:
+
+**Input FLR (customers.dat):**
+```
+0000000001JOHN DOE                      JOHN.DOE@EXAMPLE.COM            A0000123456
+0000000002JANE SMITH                    JANE.SMITH@TEST.ORG             I0000056789
+```
+
+**Layout Definition:**
+```json
+{
+  "fields": [
+    {"name": "id", "start": 1, "length": 10, "data_type": "integer"},
+    {"name": "name", "start": 11, "length": 30, "data_type": "string"},
+    {"name": "email", "start": 41, "length": 30, "data_type": "string"},
+    {"name": "status", "start": 71, "length": 1, "data_type": "string"},
+    {"name": "balance", "start": 72, "length": 10, "data_type": "decimal", "decimal_places": 2}
+  ]
+}
+```
+
+**Converted JSON:**
+```json
+{"id": 1, "name": "JOHN DOE", "email": "JOHN.DOE@EXAMPLE.COM", "status": "A", "balance": 1234.56}
+```
+
+### FLR Transformation CLI
+
+```bash
+# Basic FLR transformation with JSON layout
+python transform_flr.py mapping.smap data.dat --layout layout.json
+
+# With output file
+python transform_flr.py mapping.smap data.dat --layout layout.json --output result.json
+
+# Using simple text layout format
+python transform_flr.py mapping.smap data.dat --layout layout.txt
+
+# Skip header and footer lines
+python transform_flr.py mapping.smap data.dat --layout layout.json --skip-header 1 --skip-footer 1
+
+# EBCDIC encoded mainframe file
+python transform_flr.py mapping.smap mainframe.dat --layout layout.json --encoding cp037
+
+# Validate layout before processing
+python transform_flr.py mapping.smap data.dat --layout layout.json --validate-layout
+
+# Show intermediate JSON conversion
+python transform_flr.py mapping.smap data.dat --layout layout.json --show-json
+```
+
+### FLR CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `--layout, -l` | Path to layout file (required) |
+| `--encoding` | File encoding (default: utf-8, use cp037 for EBCDIC) |
+| `--skip-header` | Number of header lines to skip |
+| `--skip-footer` | Number of footer lines to skip |
+| `--no-skip-blank` | Don't skip blank lines |
+| `--strip-record` | Strip trailing whitespace from records |
+| `--preset` | Use preset format (mainframe, cobol, ascii) |
+| `--validate-layout` | Validate layout and show issues |
+| `--show-json` | Show intermediate FLR-to-JSON conversion |
+| `--show-layout` | Show parsed layout definition |
+
+### Layout File Formats
+
+#### JSON Layout Format
+
+```json
+{
+  "record_length": 100,
+  "fields": [
+    {
+      "name": "id",
+      "start": 1,
+      "length": 10,
+      "data_type": "integer",
+      "trim": true
+    },
+    {
+      "name": "name",
+      "start": 11,
+      "length": 30,
+      "data_type": "string",
+      "trim": true
+    },
+    {
+      "name": "amount",
+      "start": 41,
+      "length": 12,
+      "data_type": "decimal",
+      "decimal_places": 2
+    },
+    {
+      "name": "birth_date",
+      "start": 53,
+      "length": 8,
+      "data_type": "date",
+      "date_format": "YYYYMMDD"
+    },
+    {
+      "name": "active",
+      "start": 61,
+      "length": 1,
+      "data_type": "boolean"
+    }
+  ]
+}
+```
+
+#### Simple Text Layout Format
+
+```
+# field_name,start,length,type[,decimal_places_or_date_format]
+id,1,10,integer
+name,11,30,string
+amount,41,12,decimal,2
+birth_date,53,8,date,YYYYMMDD
+active,61,1,boolean
+```
+
+### Field Data Types
+
+| Type | Description | Example Input | Example Output |
+|------|-------------|---------------|----------------|
+| `string` | Text (default) | `"JOHN DOE    "` | `"JOHN DOE"` |
+| `integer` | Whole number | `"0000001234"` | `1234` |
+| `decimal` | Decimal number | `"0000123456"` (2 places) | `1234.56` |
+| `date` | Date value | `"20260130"` (YYYYMMDD) | `"2026-01-30"` |
+| `boolean` | True/False | `"Y"`, `"1"`, `"T"` | `true` |
+
+### FLR Python API
+
+```python
+from jsonchamp.transformation import transform_flr, load_mapping
+from jsonchamp.transformation.converters import FLRConverter, RecordLayout, flr_to_json
+
+# One-step transformation with JSON layout file
+results = transform_flr("customers.dat", "mapping.smap", "layout.json")
+
+# With layout dict
+layout = {
+    "fields": [
+        {"name": "id", "start": 1, "length": 10, "data_type": "integer"},
+        {"name": "name", "start": 11, "length": 30}
+    ]
+}
+results = transform_flr("data.dat", "mapping.smap", layout)
+
+# Build layout programmatically
+layout = RecordLayout()
+layout.add_field("id", 1, 10, data_type="integer")
+layout.add_field("name", 11, 30)
+layout.add_field("amount", 41, 12, data_type="decimal", decimal_places=2)
+results = transform_flr("data.dat", "mapping.smap", layout)
+
+# Manual conversion and transformation
+records = flr_to_json("data.dat", "layout.json")
+transformer = load_mapping("mapping.smap")
+results = [transformer.transform(r) for r in records]
+
+# With FLRConverter options
+converter = FLRConverter(
+    layout=layout,
+    encoding='cp037',      # EBCDIC for mainframe
+    header_lines=1,        # Skip header
+    footer_lines=1,        # Skip footer
+    skip_blank_lines=True
+)
+records = converter.convert_file("mainframe.dat")
+```
+
+### FLR Mapping Example
+
+```
+# customer_mapping.smap - transform FLR customer records
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    CleanTitle : trim | titlecase
+    ToMoney    : to_float | round(2)
+}
+
+@lookups {
+    status_codes : { "A": "ACTIVE", "I": "INACTIVE", "P": "PENDING" }
+}
+
+# FLR fields map as top-level (like CSV)
+id              : customerId
+name            : fullName | @CleanTitle
+email           : contact.email | trim | lowercase
+status          : accountStatus | lookup(@status_codes)
+balance         : account.balance | @ToMoney
+
+@now            : processedAt
+"FLR"           : sourceFormat | constant
+```
+
+---
+
+## 16. Compiled Transformations
+
+Compiled transformers are 5-10x faster than interpreted mode. They work with all input formats.
+
+### Creating Compiled Transformers
+
+```python
+from jsonchamp.transformation import create_compiled_transformer, compile_and_transform
+
+# Create reusable compiled transformer
+transformer = create_compiled_transformer("mapping.smap")
+
+# Transform single dict
+result = transformer.transform({"name": "John", "age": 30})
+
+# Transform batch
+results = transformer.transform_batch([data1, data2, data3])
+
+# One-step compile and transform
+result = compile_and_transform(source_data, "mapping.smap")
+```
+
+### Using Compiled Transformers with All Formats
+
+```python
+from jsonchamp.transformation import (
+    create_compiled_transformer, 
+    csv_to_json, xml_to_json, flr_to_json
+)
+
+# Create compiled transformer once
+transformer = create_compiled_transformer("mapping.smap")
+
+# Use with JSON/dict data
+result = transformer.transform({"name": "John"})
+
+# Use with CSV data
+records = csv_to_json("data.csv")
+results = [transformer.transform(r) for r in records]
+
+# Use with XML data
+data = xml_to_json("data.xml")
+result = transformer.transform(data)
+
+# Use with FLR data
+records = flr_to_json("data.dat", "layout.json")
+results = [transformer.transform(r) for r in records]
+```
+
+### CLI Compiled Mode
+
+```bash
+# Dict transformation with compiled mode
+python transform_dict.py mapping.smap input.json --compiled
+
+# Benchmark interpreted vs compiled
+python transform_dict.py mapping.smap input.json --benchmark
+```
+
+---
+
+## 17. CLI Reference
 
 ### Basic Usage
 
@@ -919,7 +1444,7 @@ python transform.py --benchmark mapping.smap input.json --iterations 10000
 
 ---
 
-## 14. Python API Reference
+## 18. Python API Reference
 
 ### Quick Transform
 
@@ -976,7 +1501,7 @@ except TransformError as e:
 
 ---
 
-## 15. Syntax Quick Reference Card
+## 19. Syntax Quick Reference Card
 
 ### Mapping Syntax
 

@@ -1,0 +1,33 @@
+# Customer CSV to JSON Transformation
+# Demonstrates CSV transformation capabilities
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    CleanTitle  : trim | titlecase
+    CleanLower  : trim | lowercase
+    ToMoney     : to_float | round(2)
+}
+
+@lookups {
+    status_codes : {
+        "A" : "ACTIVE",
+        "I" : "INACTIVE",
+        "P" : "PENDING"
+    }
+}
+
+# Mappings - CSV columns map directly as top-level fields
+id              : customerId | to_int
+first_name + " " + last_name : fullName | @CleanTitle
+email           : contact.email | @CleanLower
+status          : accountStatus | lookup(@status_codes)
+age             : profile.age | to_int
+balance         : account.balance | @ToMoney
+
+# Computed fields
+@now            : processedAt
+@uuid           : recordId
+"CSV"           : sourceType | constant

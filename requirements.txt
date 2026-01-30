@@ -10,7 +10,7 @@
 faker>=18.0.0
 
 # Optional: Remote schema fetching
-requests>=2.32.4
+requests>=2.28.0
 
 # Optional: Enhanced validation
 jsonschema>=4.17.0

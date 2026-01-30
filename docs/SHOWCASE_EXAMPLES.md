@@ -1,6 +1,6 @@
 # SchemaMap Showcase Examples - Complete Reference Guide
 
-**Version:** 1.4.2  
+**Version:** 1.7.0  
 **Copyright:** © 2025-2030, All Rights Reserved - Ashutosh Sinha (ajsinha@gmail.com)  
 **Last Updated:** January 2026
 
@@ -1108,5 +1108,5 @@ field3 : output3 | @CleanLower
 
 ---
 
-**Document Version:** 1.4.2  
+**Document Version:** 1.6.0  
 **Author:** Ashutosh Sinha (ajsinha@gmail.com)
