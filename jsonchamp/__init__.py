@@ -26,7 +26,7 @@ A comprehensive library for working with JSON Schema in Python:
 - Full JSON Schema Draft-07 support
 
 Usage:
-    from jsontools import SchemaProcessor, generate_code, generate_samples
+    from jsonchamp import SchemaProcessor, generate_code, generate_samples
 
     # Quick start with single schema
     processor = SchemaProcessor(schema)
@@ -34,11 +34,11 @@ Usage:
     samples = processor.generate_samples(count=5)
     
     # Generate complete module from schema folder
-    from jsontools import generate_module
+    from jsonchamp import generate_module
     generate_module("schemas/", "myapp/models")
 """
 
-__version__ = "1.4.2"
+__version__ = "1.5.0"
 __author__ = "Ashutosh Sinha"
 __email__ = "ajsinha@gmail.com"
 

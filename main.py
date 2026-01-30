@@ -27,7 +27,7 @@ from datetime import datetime, date
 # Add package to path for direct execution
 sys.path.insert(0, str(Path(__file__).parent))
 
-from jsontools import (
+from jsonchamp import (
     SchemaProcessor,
     generate_code,
     generate_samples,
@@ -35,18 +35,18 @@ from jsontools import (
     ModuleGenerator,
     __version__,
 )
-from jsontools.core import (
+from jsonchamp.core import (
     SchemaParser,
     ReferenceResolver,
     TypeMapper,
     SchemaValidator,
 )
-from jsontools.generators import (
+from jsonchamp.generators import (
     SampleGenerator,
     ClassGenerator,
     CodeGenerator,
 )
-from jsontools.utils import load_schema
+from jsonchamp.utils import load_schema
 
 
 # =============================================================================

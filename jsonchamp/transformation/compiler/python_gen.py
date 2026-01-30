@@ -44,7 +44,7 @@ class PythonCodeGenerator:
         return f'''"""
 Generated Transformer - {source_file}
 Generated: {datetime.now().isoformat()}
-JsonTools SchemaMap Compiler v1.4.0
+JsonChamp SchemaMap Compiler v1.4.0
 """
 
 from __future__ import annotations

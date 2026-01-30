@@ -3,7 +3,7 @@ Generated Transformer Code
 
 Auto-generated from: examples/transformation/mappings/simple_user.smap
 Generated at: 2026-01-30T02:11:56.852560
-Generator: JsonTools SchemaMap Compiler v1.4.0
+Generator: JsonChamp SchemaMap Compiler v1.4.0
 
 Copyright (C) 2025-2030, All Rights Reserved
 Ashutosh Sinha - ajsinha@gmail.com

@@ -9,7 +9,7 @@ A domain-specific language for transforming JSON documents between schemas.
 Supports external Python functions for custom transformation logic.
 
 Example usage:
-    from jsontools.transformation import transform, load_mapping
+    from jsonchamp.transformation import transform, load_mapping
     
     # Basic transformation
     result = transform(source_data, "mapping.smap")

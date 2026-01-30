@@ -30,3 +30,15 @@
 ### Changed
 - Removed Word document format in favor of Markdown for better version control
 - Version updated to 1.4.2
+
+## [1.5.0] - 2026-01-30
+
+### Changed
+- **Project Renamed**: jsontools → jsonchamp
+- All module imports updated to use jsonchamp
+- CLI commands now use jsonchamp prefix
+- Package name updated across all configuration files
+
+### Documentation
+- Updated all documentation to reflect new name
+- Updated code examples with new import paths

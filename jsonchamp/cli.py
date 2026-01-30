@@ -14,10 +14,10 @@ Patent Pending: Certain implementations may be subject to patent applications.
 Command Line Interface for JsonSchemaCodeGen.
 
 Usage:
-    jsontools generate --schema schema.json --output models.py
-    jsontools sample --schema schema.json --count 5
-    jsontools validate --schema schema.json --data data.json
-    jsontools generate-module --schema-dir schemas/ --output-dir output/
+    jsonchamp generate --schema schema.json --output models.py
+    jsonchamp sample --schema schema.json --count 5
+    jsonchamp validate --schema schema.json --data data.json
+    jsonchamp generate-module --schema-dir schemas/ --output-dir output/
 """
 
 import argparse
@@ -35,29 +35,29 @@ from .generators.code_generator import CodeGenerator
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
     parser = argparse.ArgumentParser(
-        prog="jsontools",
+        prog="jsonchamp",
         description="Generate Python code and sample data from JSON Schema",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   Generate Python dataclasses:
-    jsontools generate -s schema.json -o models.py
+    jsonchamp generate -s schema.json -o models.py
     
   Generate sample JSON data:
-    jsontools sample -s schema.json -c 10 -o samples.json
+    jsonchamp sample -s schema.json -c 10 -o samples.json
     
   Validate a schema:
-    jsontools validate -s schema.json
+    jsonchamp validate -s schema.json
     
   Validate data against schema:
-    jsontools validate -s schema.json -d data.json
+    jsonchamp validate -s schema.json -d data.json
     
   Generate module from schema folder:
-    jsontools generate-module --schema-dir schemas/ --output-dir output/
-    jsontools generate-module --schema-dir schemas/ --output-dir output/ --module-name mymodels
+    jsonchamp generate-module --schema-dir schemas/ --output-dir output/
+    jsonchamp generate-module --schema-dir schemas/ --output-dir output/ --module-name mymodels
     
   Analyze schema complexity:
-    jsontools info -s schema.json
+    jsonchamp info -s schema.json
 
 Copyright (C) 2025-2030, Ashutosh Sinha. All Rights Reserved.
 """,

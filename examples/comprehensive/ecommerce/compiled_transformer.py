@@ -1,7 +1,7 @@
 """
 Generated Transformer - examples/comprehensive/ecommerce/order_transform.smap
 Generated: 2026-01-30T02:39:03.674937
-JsonTools SchemaMap Compiler v1.4.0
+JsonChamp SchemaMap Compiler v1.4.0
 """
 
 from __future__ import annotations

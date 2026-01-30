@@ -7,7 +7,7 @@ Email: ajsinha@gmail.com
 """
 
 import pytest
-from jsontools import SchemaProcessor, __version__
+from jsonchamp import SchemaProcessor, __version__
 
 
 def test_version():

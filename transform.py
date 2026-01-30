@@ -27,12 +27,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from jsontools.transformation import (
+from jsonchamp.transformation import (
     transform, load_mapping, validate_json_schema,
     ValidationError, TransformError, SchemaMapParser
 )
-from jsontools.transformation.compiler.python_gen import PythonCodeGenerator
-from jsontools import __version__
+from jsonchamp.transformation.compiler.python_gen import PythonCodeGenerator
+from jsonchamp import __version__
 
 
 def compile_to_python(mapping_path: str, output_path: str, class_name: str, verbose: bool = False):

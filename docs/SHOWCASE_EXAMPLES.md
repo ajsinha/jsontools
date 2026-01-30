@@ -36,7 +36,7 @@
 
 ## 1. Introduction
 
-This document provides exhaustive documentation for the two showcase examples included with JsonTools SchemaMap v1.4.x. These examples demonstrate every capability of the transformation DSL.
+This document provides exhaustive documentation for the two showcase examples included with JsonChamp SchemaMap v1.4.x. These examples demonstrate every capability of the transformation DSL.
 
 ### Document Scope
 

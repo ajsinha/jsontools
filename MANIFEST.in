@@ -3,7 +3,7 @@ include LICENSE
 include README.md
 include pyproject.toml
 include requirements*.txt
-recursive-include jsontools *.py *.typed
+recursive-include jsonchamp *.py *.typed
 recursive-include examples *.json *.smap
 recursive-include docs *.md
 prune tests

@@ -98,7 +98,7 @@ python transform.py --compile my_mapping.smap -o transformer.py
 ### Python API
 
 ```python
-from jsontools.transformation import transform, load_mapping
+from jsonchamp.transformation import transform, load_mapping
 
 # One-liner
 result = transform(source_data, "my_mapping.smap")
@@ -753,7 +753,7 @@ python transform.py mapping.smap input.json --functions my_functions.py
 
 **Via Python API:**
 ```python
-from jsontools.transformation import load_mapping
+from jsonchamp.transformation import load_mapping
 
 transformer = load_mapping("mapping.smap")
 transformer.register_function("calculate_tax", calculate_tax)
@@ -924,7 +924,7 @@ python transform.py --benchmark mapping.smap input.json --iterations 10000
 ### Quick Transform
 
 ```python
-from jsontools.transformation import transform
+from jsonchamp.transformation import transform
 
 result = transform(source_data, "mapping.smap")
 ```
@@ -932,7 +932,7 @@ result = transform(source_data, "mapping.smap")
 ### Load Mapping
 
 ```python
-from jsontools.transformation import load_mapping
+from jsonchamp.transformation import load_mapping
 
 transformer = load_mapping("mapping.smap")
 result = transformer.transform(source_data)
@@ -966,7 +966,7 @@ results = transformer.transform_batch(items)
 ### Error Handling
 
 ```python
-from jsontools.transformation import TransformError
+from jsonchamp.transformation import TransformError
 
 try:
     result = transformer.transform(data)

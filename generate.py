@@ -26,7 +26,7 @@ from pathlib import Path
 # Add package to path for direct execution
 sys.path.insert(0, str(Path(__file__).parent))
 
-from jsontools import generate_module, __version__
+from jsonchamp import generate_module, __version__
 
 
 def main():

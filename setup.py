@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-JsonTools - Commercial Grade JSON Schema Tools
+JsonChamp - Commercial Grade JSON Schema Tools
 
 Copyright (C) 2025-2030, All Rights Reserved
 Ashutosh Sinha
@@ -19,17 +19,17 @@ readme_file = Path(__file__).parent / "README.md"
 long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists() else ""
 
 setup(
-    name="jsontools",
+    name="jsonchamp",
     version=version,
     author="Ashutosh Sinha",
     author_email="ajsinha@gmail.com",
     description="Commercial Grade JSON Schema to Python Code Generator with SchemaMap Transformation DSL",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ajsinha/jsontools",
+    url="https://github.com/ajsinha/jsonchamp",
     packages=find_packages(exclude=["tests", "tests.*", "examples", "examples.*"]),
     package_data={
-        "jsontools": ["py.typed"],
+        "jsonchamp": ["py.typed"],
     },
     python_requires=">=3.8",
     install_requires=[],
@@ -50,7 +50,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "jsontools=jsontools.cli:main",
+            "jsonchamp=jsonchamp.cli:main",
         ],
     },
     classifiers=[

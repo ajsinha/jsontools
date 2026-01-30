@@ -1,9 +1,9 @@
-# JsonTools v1.4.0
+# JsonChamp v1.4.0
 
 ```
 +==============================================================================+
 |                                                                              |
-|                           JsonTools v1.4.0                                   |
+|                           JsonChamp v1.4.0                                   |
 |                                                                              |
 |            Commercial Grade JSON Schema to Python Code Generator             |
 |                      with SchemaMap Transformation DSL                       |
@@ -26,7 +26,7 @@
 
 ## Overview
 
-**JsonTools** is a comprehensive, commercial-grade Python library for working with JSON Schema. It provides powerful, production-ready tools for:
+**JsonChamp** is a comprehensive, commercial-grade Python library for working with JSON Schema. It provides powerful, production-ready tools for:
 
 - **Schema Parsing**: Parse and analyze JSON Schema documents with full Draft-07 support
 - **Code Generation**: Generate Python dataclasses from JSON Schema
@@ -86,7 +86,7 @@ pip install .
 ### Generate Python Module from JSON Schemas
 
 ```bash
-python -m jsontools generate-module \
+python -m jsonchamp generate-module \
     --schema-dir ./schemas \
     --output-dir ./generated \
     --module-name my_models
@@ -106,7 +106,7 @@ python transformer.py input.json
 ### Python API
 
 ```python
-from jsontools.transformation import transform, load_mapping
+from jsonchamp.transformation import transform, load_mapping
 
 # Simple transformation
 result = transform(source_data, "mapping.smap")
@@ -215,8 +215,8 @@ python transform.py --benchmark mapping.smap input.json --iterations 50000
 ## Project Structure
 
 ```
-jsontools/
-├── jsontools/                   # Main package
+jsonchamp/
+├── jsonchamp/                   # Main package
 │   ├── __init__.py              # Public API
 │   ├── cli.py                   # CLI implementation
 │   ├── module_generator.py      # Module generation

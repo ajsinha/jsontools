@@ -1,4 +1,4 @@
-# JsonTools - Quick Start Guide
+# JsonChamp - Quick Start Guide
 
 Copyright (C) 2025-2030, All Rights Reserved
 Ashutosh Sinha (ajsinha@gmail.com)
@@ -8,7 +8,7 @@ Ashutosh Sinha (ajsinha@gmail.com)
 ## Installation
 
 ```bash
-cd jsontools
+cd jsonchamp
 pip install .
 ```
 
@@ -19,7 +19,7 @@ pip install .
 ### Step 1: Generate the Module
 
 ```bash
-python -m jsontools generate-module \
+python -m jsonchamp generate-module \
     --schema-dir ./schemas \
     --output-dir ./output \
     --module-name mymodels
@@ -71,7 +71,7 @@ output/
 ## Option 2: Single Schema Processing
 
 ```python
-from jsontools import SchemaProcessor
+from jsonchamp import SchemaProcessor
 
 schema = {
     "type": "object",
@@ -99,16 +99,16 @@ samples = processor.generate_samples(count=3)
 
 ```bash
 # Generate module
-python -m jsontools generate-module -s schemas/ -o output/ -m mymodels
+python -m jsonchamp generate-module -s schemas/ -o output/ -m mymodels
 
 # Generate code
-python -m jsontools generate -s schema.json -o output.py
+python -m jsonchamp generate -s schema.json -o output.py
 
 # Generate samples
-python -m jsontools sample -s schema.json -c 5
+python -m jsonchamp sample -s schema.json -c 5
 
 # Validate
-python -m jsontools validate -s schema.json -d data.json
+python -m jsonchamp validate -s schema.json -d data.json
 ```
 
 ---

@@ -1,4 +1,4 @@
-# JsonTools - Module Generator Guide
+# JsonChamp - Module Generator Guide
 
 Copyright (C) 2025-2030, All Rights Reserved
 Ashutosh Sinha (ajsinha@gmail.com)
@@ -16,7 +16,7 @@ The Module Generator creates complete, importable Python modules from folders of
 ### Command Line
 
 ```bash
-python -m jsontools generate-module \
+python -m jsonchamp generate-module \
     --schema-dir ./schemas \
     --output-dir ./output \
     --module-name mymodels
@@ -31,7 +31,7 @@ python generate.py -s ./schemas -o ./output -m mymodels
 ### Python API
 
 ```python
-from jsontools import generate_module
+from jsonchamp import generate_module
 
 result = generate_module(
     schema_dir="schemas/",
