@@ -1,20 +1,14 @@
-# JsonSchemaCodeGen - Manifest Configuration
-#
-# Copyright © 2025-2030, All Rights Reserved
-# Ashutosh Sinha
-# Email: ajsinha@gmail.com
-
+include VERSION
 include LICENSE
 include README.md
 include pyproject.toml
-include setup.py
-include MANIFEST.in
-
-recursive-include jsonschemacodegen *.py *.pyi py.typed
-recursive-include examples *.json
-recursive-include docs *.md *.rst *.txt
-
-global-exclude __pycache__
-global-exclude *.py[cod]
-global-exclude .git*
+include requirements*.txt
+recursive-include jsontools *.py *.typed
+recursive-include examples *.json *.smap
+recursive-include docs *.md
+prune tests
+prune __pycache__
+prune *.egg-info
+global-exclude *.pyc
+global-exclude *.pyo
 global-exclude .DS_Store

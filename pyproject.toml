@@ -3,15 +3,16 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "jsonschemacodegen"
-version = "1.2.3"
-description = "Commercial Grade JSON Schema to Python Code Generator"
+name = "jsontools"
+version = "1.4.0"
+description = "Commercial Grade JSON Schema to Python Code Generator with SchemaMap Transformation DSL"
 readme = "README.md"
 license = {text = "Proprietary"}
+requires-python = ">=3.8"
 authors = [
     {name = "Ashutosh Sinha", email = "ajsinha@gmail.com"}
 ]
-requires-python = ">=3.8"
+keywords = ["json", "schema", "codegen", "dataclass", "transformation", "dsl", "schemamap"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -27,18 +28,12 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-keywords = ["json", "schema", "code-generator", "dataclass", "python"]
-dependencies = []
 
 [project.optional-dependencies]
 faker = ["faker>=18.0.0"]
 requests = ["requests>=2.28.0"]
-jsonschema = ["jsonschema>=4.17.0"]
-all = [
-    "faker>=18.0.0",
-    "requests>=2.28.0",
-    "jsonschema>=4.17.0",
-]
+validation = ["jsonschema>=4.17.0"]
+all = ["faker>=18.0.0", "requests>=2.28.0", "jsonschema>=4.17.0"]
 dev = [
     "faker>=18.0.0",
     "requests>=2.28.0",
@@ -46,24 +41,22 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
-    "isort>=5.12.0",
     "mypy>=1.0.0",
-    "flake8>=6.0.0",
 ]
 
 [project.scripts]
-jsonschemacodegen = "jsonschemacodegen.cli:main"
+jsontools = "jsontools.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/ajsinha/jsonschemacodegen"
-Documentation = "https://github.com/ajsinha/jsonschemacodegen/docs"
-Repository = "https://github.com/ajsinha/jsonschemacodegen"
+Homepage = "https://github.com/ajsinha/jsontools"
+Documentation = "https://github.com/ajsinha/jsontools/docs"
+Repository = "https://github.com/ajsinha/jsontools"
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "examples*"]
 
 [tool.setuptools.package-data]
-jsonschemacodegen = ["py.typed"]
+jsontools = ["py.typed"]
 
 [tool.black]
 line-length = 100
@@ -74,16 +67,11 @@ exclude = '''
     \.git
     | \.mypy_cache
     | \.pytest_cache
-    | \.venv
+    | __pycache__
     | build
     | dist
 )/
 '''
-
-[tool.isort]
-profile = "black"
-line_length = 100
-known_first_party = ["jsonschemacodegen"]
 
 [tool.mypy]
 python_version = "3.8"
@@ -96,15 +84,3 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
-
-[tool.coverage.run]
-source = ["jsonschemacodegen"]
-omit = ["tests/*", "examples/*"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise NotImplementedError",
-    "if TYPE_CHECKING:",
-]

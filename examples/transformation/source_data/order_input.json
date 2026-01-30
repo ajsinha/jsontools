@@ -1,0 +1,36 @@
+{
+  "order_id": "ORD-2024-001",
+  "order_date": "2024-12-15T14:30:00Z",
+  "customer": {
+    "name": "JOHN DOE",
+    "email": "JOHN.DOE@EXAMPLE.COM",
+    "phone": "2125551234"
+  },
+  "items": [
+    {
+      "sku": "ITEM-001",
+      "name": "WIRELESS KEYBOARD",
+      "quantity": 2,
+      "unit_price": 49.99,
+      "line_total": 99.98
+    },
+    {
+      "sku": "ITEM-002", 
+      "name": "USB MOUSE",
+      "quantity": 1,
+      "unit_price": 24.99,
+      "line_total": 24.99
+    },
+    {
+      "sku": "ITEM-003",
+      "name": "MONITOR STAND",
+      "quantity": 1,
+      "unit_price": 79.99,
+      "line_total": 79.99
+    }
+  ],
+  "subtotal": 204.96,
+  "tax": 0,
+  "total_weight": 5.5,
+  "shipping_method": "standard"
+}

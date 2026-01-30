@@ -1,0 +1,21 @@
+# Basic test mapping
+@config {
+    null_handling : omit
+}
+
+# Simple mappings
+user.id                             : userId
+user.first_name                     : profile.firstName | trim | titlecase
+user.last_name                      : profile.lastName | trim | titlecase
+user.first_name + " " + user.last_name : profile.fullName | trim
+user.email                          : contactEmail | lowercase | trim
+user.age                            : age | to_int
+
+# Nested output
+user.street                         : address.line1
+user.city                           : address.city | titlecase
+user.zip                            : address.postalCode
+
+# Constants
+"1.0"                               : version | constant
+@now                                : transformedAt

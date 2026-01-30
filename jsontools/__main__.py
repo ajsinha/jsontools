@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-from jsonschemacodegen import (
+from jsontools import (
     SchemaProcessor,
     generate_classes,
     generate_samples,
@@ -30,8 +30,8 @@ from jsonschemacodegen import (
     generate_module,
     __version__,
 )
-from jsonschemacodegen.core import SchemaValidator
-from jsonschemacodegen.utils import load_schema, save_code
+from jsontools.core import SchemaValidator
+from jsontools.utils import load_schema, save_code
 
 
 def print_banner():
@@ -164,7 +164,7 @@ def cmd_interactive(args):
     
     while True:
         try:
-            cmd = input("jsonschemacodegen> ").strip()
+            cmd = input("jsontools> ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\nGoodbye!")
             break
@@ -251,7 +251,7 @@ Available commands:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        prog="jsonschemacodegen",
+        prog="jsontools",
         description="JsonSchemaCodeGen - Generate Python code from JSON Schema",
         epilog="Copyright (C) 2025-2030 Ashutosh Sinha. All Rights Reserved.",
     )

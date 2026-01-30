@@ -1,0 +1,154 @@
+#===============================================================================
+# SCHEMAMAP v1.3.0
+# Name        : Legacy Customer to Modern Customer API
+# Source      : legacy_customer.json
+# Target      : modern_customer_schema.json
+# Description : Transforms legacy flat customer data to modern nested API format
+#===============================================================================
+
+@config {
+    null_handling    : omit
+    missing_fields   : skip
+    date_format      : "ISO8601"
+    strict_mode      : false
+}
+
+#-------------------------------------------------------------------------------
+# ALIASES: Reusable Transform Chains
+#-------------------------------------------------------------------------------
+
+@aliases {
+    Clean           : trim | max_length(255)
+    ProperName      : trim | titlecase
+    Email           : trim | lowercase
+    Phone           : trim | replace("-", "") | replace("(", "") | replace(")", "") | replace(" ", "")
+    ToDecimal       : to_float | round(2)
+    ToBoolean       : when("Y", true) | when("N", false) | default(false)
+    DateMMDDYYYY    : trim
+}
+
+#-------------------------------------------------------------------------------
+# LOOKUPS: Reference Data
+#-------------------------------------------------------------------------------
+
+@lookups {
+    status_codes : {
+        "A"        : "ACTIVE",
+        "I"        : "INACTIVE",
+        "S"        : "SUSPENDED",
+        "C"        : "CLOSED"
+    }
+    
+    customer_types : {
+        "PREMIUM"  : "PREMIUM",
+        "STANDARD" : "STANDARD",
+        "BASIC"    : "BASIC"
+    }
+    
+    account_types : {
+        "CHECKING"   : "CHECKING_ACCOUNT",
+        "SAVINGS"    : "SAVINGS_ACCOUNT",
+        "INVESTMENT" : "INVESTMENT_ACCOUNT",
+        "CREDIT"     : "CREDIT_ACCOUNT"
+    }
+}
+
+#===============================================================================
+# MAPPINGS
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# Customer Identity
+#-------------------------------------------------------------------------------
+
+customer.cust_id                    : customerId
+customer.cust_type                  : customerType | lookup(@customer_types)
+customer.registration_date          : registrationDate | @DateMMDDYYYY
+customer.status                     : status | lookup(@status_codes)
+
+#-------------------------------------------------------------------------------
+# Personal Information (Nested Object)
+#-------------------------------------------------------------------------------
+
+personal_info.first_name + " " + personal_info.middle_name? + " " + personal_info.last_name + " " + personal_info.suffix?
+                                    : profile.fullName | @Clean | collapse_spaces
+
+personal_info.first_name            : profile.firstName | @ProperName
+personal_info.middle_name?          : profile.middleName | @ProperName
+personal_info.last_name             : profile.lastName | @ProperName
+personal_info.suffix?               : profile.suffix | trim
+personal_info.dob                   : profile.dateOfBirth | @DateMMDDYYYY
+personal_info.gender                : profile.gender | when("M", "MALE") | when("F", "FEMALE") | else("OTHER")
+
+# SSN masking
+personal_info.ssn                   : profile.taxId.full
+personal_info.ssn                   : profile.taxId.masked | regex_replace("^(\\d{3})-(\\d{2})-(\\d{4})$", "XXX-XX-$3")
+
+#-------------------------------------------------------------------------------
+# Contact Information (Restructured)
+#-------------------------------------------------------------------------------
+
+contact.primary_email               : contactInfo.primaryEmail | @Email
+contact.secondary_email?            : contactInfo.secondaryEmail | @Email
+contact.preferred_contact           : contactInfo.preferredChannel
+
+# Phone numbers with formatting
+contact.home_phone?                 : contactInfo.phones.home | @Phone
+contact.mobile_phone?               : contactInfo.phones.mobile | @Phone
+contact.work_phone?                 : contactInfo.phones.work | @Phone
+
+#-------------------------------------------------------------------------------
+# Addresses (Array Transformation)
+#-------------------------------------------------------------------------------
+
+addresses[*].addr_type              : addresses[*].type
+addresses[*].street1                : addresses[*].line1 | @ProperName
+addresses[*].street2?               : addresses[*].line2 | @ProperName
+addresses[*].city                   : addresses[*].city | @ProperName
+addresses[*].state                  : addresses[*].stateProvince | uppercase
+addresses[*].zip                    : addresses[*].postalCode
+addresses[*].country                : addresses[*].countryCode
+addresses[*].is_primary             : addresses[*].isPrimary | @ToBoolean
+addresses[*].is_mailing             : addresses[*].isMailing | @ToBoolean
+
+#-------------------------------------------------------------------------------
+# Accounts (Array with Computed Fields)
+#-------------------------------------------------------------------------------
+
+accounts[*].account_id              : financialAccounts[*].accountId
+accounts[*].account_type            : financialAccounts[*].type | lookup(@account_types)
+accounts[*].balance                 : financialAccounts[*].currentBalance | @ToDecimal
+accounts[*].currency                : financialAccounts[*].currency
+accounts[*].opened_date             : financialAccounts[*].openedDate | @DateMMDDYYYY
+accounts[*].status                  : financialAccounts[*].status
+
+#-------------------------------------------------------------------------------
+# Preferences
+#-------------------------------------------------------------------------------
+
+preferences.marketing_opt_in        : preferences.marketing | @ToBoolean
+preferences.paperless               : preferences.paperless | @ToBoolean
+preferences.language                : preferences.locale.language
+preferences.timezone                : preferences.locale.timezone
+
+#-------------------------------------------------------------------------------
+# Computed Fields
+#-------------------------------------------------------------------------------
+
+@compute(count(accounts))           : summary.totalAccounts
+@compute(sum(accounts[*].balance))  : summary.totalBalance | @ToDecimal
+
+#-------------------------------------------------------------------------------
+# Metadata
+#-------------------------------------------------------------------------------
+
+"2.0"                               : metadata.schemaVersion | constant
+metadata.created_at                 : metadata.createdAt
+metadata.updated_at                 : metadata.updatedAt
+metadata.version                    : metadata.version | to_int
+@now                                : metadata.transformedAt
+@uuid                               : metadata.transformationId
+
+#===============================================================================
+# END OF MAPPING
+#===============================================================================

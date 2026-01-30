@@ -1,0 +1,50 @@
+#===============================================================================
+# SCHEMAMAP v1.3.0
+# Name        : Simple User Transformation
+# Description : Basic example demonstrating core SchemaMap features
+#===============================================================================
+
+@config {
+    null_handling : omit
+}
+
+@aliases {
+    Trim    : trim
+    Lower   : lowercase
+    Title   : titlecase
+}
+
+@lookups {
+    status_map : {
+        "A" : "ACTIVE",
+        "I" : "INACTIVE"
+    }
+}
+
+# Simple field mapping
+user.id                             : userId
+user.status                         : status | lookup(@status_map)
+
+# String transforms
+user.first_name + " " + user.last_name : fullName | @Title | @Trim
+user.email                          : contactEmail | @Lower
+
+# Numeric transforms  
+user.age                            : age | to_int
+
+# Nested output
+user.street                         : address.line1
+user.city                           : address.city | @Title
+user.zip                            : address.postalCode
+
+# Array transformation
+user.tags[*]                        : interests[*] | @Lower
+
+# Constants and computed
+"1.0"                               : version | constant
+@now                                : transformedAt
+@uuid                               : transformId
+
+#===============================================================================
+# END
+#===============================================================================

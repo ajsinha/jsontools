@@ -1,0 +1,80 @@
+#===============================================================================
+# SCHEMAMAP v1.3.0
+# Name        : Order Transformation with External Functions
+# Description : Demonstrates @compute with external Python functions
+#===============================================================================
+
+@config {
+    null_handling    : omit
+    functions_file   : "examples/transformation/custom_functions.py"
+}
+
+# Register external functions (alternative to config)
+@functions {
+    calc_tax        : "examples/transformation/custom_functions:calculate_tax"
+    calc_shipping   : "examples/transformation/custom_functions:calculate_shipping"
+    calc_total      : "examples/transformation/custom_functions:calculate_total"
+    fmt_currency    : "examples/transformation/custom_functions:format_currency"
+    fmt_date        : "examples/transformation/custom_functions:format_date"
+    fmt_phone       : "examples/transformation/custom_functions:format_phone"
+}
+
+@aliases {
+    Money           : to_float | round(2)
+    Clean           : trim | titlecase
+}
+
+#===============================================================================
+# ORDER HEADER
+#===============================================================================
+
+order_id                            : orderId
+
+# Use external function to format date
+@compute(fmt_date(order_date, "%B %d, %Y")) : displayDate
+order_date                          : orderDate
+
+customer.name                       : customer.fullName | @Clean
+
+# Use external function to format phone
+@compute(fmt_phone(customer.phone, "US")) : customer.formattedPhone
+customer.email                      : customer.email | lowercase
+
+#===============================================================================
+# LINE ITEMS (Array)
+#===============================================================================
+
+items[*].sku                        : lineItems[*].productCode
+items[*].name                       : lineItems[*].productName | @Clean
+items[*].quantity                   : lineItems[*].qty | to_int
+items[*].unit_price                 : lineItems[*].unitPrice | @Money
+items[*].line_total                 : lineItems[*].lineTotal | @Money
+
+#===============================================================================
+# COMPUTED TOTALS - Using External Functions
+#===============================================================================
+
+# Calculate subtotal from items
+@compute(sum(items[*].line_total))  : totals.subtotal | @Money
+
+# Calculate tax using external function (8% rate)
+@call(calc_tax, subtotal, 0.08)     : totals.tax | @Money
+
+# Calculate shipping using external function  
+@call(calc_shipping, subtotal, total_weight, shipping_method) : totals.shipping | @Money
+
+# Format currency for display
+@compute(fmt_currency(subtotal, "USD")) : totals.displaySubtotal
+@compute(fmt_currency(tax, "USD"))      : totals.displayTax
+
+#===============================================================================
+# METADATA
+#===============================================================================
+
+"1.0"                               : metadata.version | constant
+@now                                : metadata.transformedAt
+@uuid                               : metadata.transformationId
+
+#===============================================================================
+# END OF MAPPING
+#===============================================================================

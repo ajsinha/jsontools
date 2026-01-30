@@ -1,0 +1,78 @@
+{
+  "customer": {
+    "cust_id": "CUST-2024-88721",
+    "cust_type": "PREMIUM",
+    "registration_date": "03/15/2020",
+    "status": "A"
+  },
+  "personal_info": {
+    "first_name": "JONATHAN",
+    "middle_name": "EDWARD",
+    "last_name": "WHITMORE",
+    "suffix": "III",
+    "dob": "08/22/1975",
+    "ssn": "123-45-6789",
+    "gender": "M"
+  },
+  "contact": {
+    "primary_email": "JONATHAN.WHITMORE@EMAIL.COM",
+    "secondary_email": "jwhitmore@work.com",
+    "home_phone": "2035551234",
+    "mobile_phone": "2035559876",
+    "work_phone": null,
+    "preferred_contact": "EMAIL"
+  },
+  "addresses": [
+    {
+      "addr_type": "HOME",
+      "street1": "450 PARK AVENUE",
+      "street2": "APT 32B",
+      "city": "NEW YORK",
+      "state": "NY",
+      "zip": "10022",
+      "country": "US",
+      "is_primary": "Y",
+      "is_mailing": "Y"
+    },
+    {
+      "addr_type": "VACATION",
+      "street1": "78 OCEAN DRIVE",
+      "street2": null,
+      "city": "PALM BEACH",
+      "state": "FL",
+      "zip": "33480",
+      "country": "US",
+      "is_primary": "N",
+      "is_mailing": "N"
+    }
+  ],
+  "accounts": [
+    {
+      "account_id": "ACC-001",
+      "account_type": "CHECKING",
+      "balance": "15234.56",
+      "currency": "USD",
+      "opened_date": "03/15/2020",
+      "status": "ACTIVE"
+    },
+    {
+      "account_id": "ACC-002",
+      "account_type": "SAVINGS",
+      "balance": "87500.00",
+      "currency": "USD",
+      "opened_date": "06/22/2020",
+      "status": "ACTIVE"
+    }
+  ],
+  "preferences": {
+    "marketing_opt_in": "Y",
+    "paperless": "Y",
+    "language": "EN",
+    "timezone": "America/New_York"
+  },
+  "metadata": {
+    "created_at": "2020-03-15 09:30:00",
+    "updated_at": "2024-12-15 14:22:33",
+    "version": 47
+  }
+}

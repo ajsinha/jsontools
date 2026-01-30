@@ -1,0 +1,211 @@
+#===============================================================================
+# SCHEMAMAP v1.3.0
+# Name        : Legacy Portfolio to Modern Wealth Platform
+# Source      : legacy_portfolio.json  
+# Target      : modern_portfolio_schema.json
+# Description : Complex nested-to-nested transformation with arrays and computed fields
+#===============================================================================
+
+@config {
+    null_handling    : omit
+    missing_fields   : skip
+    date_format      : "ISO8601"
+}
+
+@aliases {
+    Clean           : trim | max_length(255)
+    ProperName      : trim | titlecase
+    Money           : to_float | round(2)
+    Percent         : to_float | round(2)
+    ToBoolean       : when("Y", true) | when("N", false) | default(false)
+    MaskSSN         : regex_replace("^(\\d{3})-(\\d{2})-(\\d{4})$", "XXX-XX-$3")
+}
+
+@lookups {
+    benchmark_names : {
+        "SPX"   : "S&P 500 Index",
+        "NDX"   : "NASDAQ 100 Index",
+        "DJIA"  : "Dow Jones Industrial Average"
+    }
+    
+    account_names : {
+        "TAXABLE" : "Individual Taxable Account",
+        "IRA"     : "Traditional IRA",
+        "ROTH"    : "Roth IRA"
+    }
+    
+    holding_terms : {
+        "LONG_TERM"  : "LONG",
+        "SHORT_TERM" : "SHORT"
+    }
+}
+
+#===============================================================================
+# PORTFOLIO HEADER
+#===============================================================================
+
+portfolio_header.portfolio_id           : portfolio.id
+portfolio_header.portfolio_name         : portfolio.name | @ProperName
+portfolio_header.portfolio_type         : portfolio.type
+portfolio_header.inception_dt           : portfolio.inceptionDate
+portfolio_header.benchmark_idx          : portfolio.benchmark.code
+portfolio_header.benchmark_idx          : portfolio.benchmark.name | lookup(@benchmark_names)
+portfolio_header.risk_category          : portfolio.riskProfile.category
+portfolio_header.risk_score             : portfolio.riskProfile.score | to_int
+
+#===============================================================================
+# OWNER INFORMATION
+#===============================================================================
+
+owner_info.owner_id                     : owner.id
+owner_info.owner_type                   : owner.type
+
+# Build full name
+owner_info.name_first + " " + owner_info.name_middle? + " " + owner_info.name_last + " " + owner_info.name_suffix?
+                                        : owner.profile.fullName | @Clean | collapse_spaces
+
+owner_info.name_first                   : owner.profile.firstName | @ProperName
+owner_info.name_middle?                 : owner.profile.middleName | @ProperName
+owner_info.name_last                    : owner.profile.lastName | @ProperName
+owner_info.name_suffix?                 : owner.profile.suffix | trim
+
+owner_info.birth_date                   : owner.profile.dateOfBirth
+owner_info.tax_id                       : owner.profile.taxId.full
+owner_info.tax_id                       : owner.profile.taxId.masked | @MaskSSN
+owner_info.residency                    : owner.profile.taxResidency | replace("_RESIDENT", "")
+
+#===============================================================================
+# CONTACT INFORMATION
+#===============================================================================
+
+contact_info.email_primary              : owner.contactInfo.emails.primary | lowercase
+contact_info.email_secondary?           : owner.contactInfo.emails.secondary | lowercase
+contact_info.phone_home?                : owner.contactInfo.phones.home
+contact_info.phone_mobile?              : owner.contactInfo.phones.mobile
+contact_info.contact_pref               : owner.contactInfo.preferredChannel
+contact_info.do_not_call                : owner.contactInfo.doNotCall | @ToBoolean
+contact_info.do_not_email               : owner.contactInfo.doNotEmail | @ToBoolean
+
+#===============================================================================
+# ADDRESSES (Array Transformation)
+#===============================================================================
+
+addresses[*].address_type               : owner.addresses[*].type
+addresses[*].street_line_1              : owner.addresses[*].line1 | @ProperName
+addresses[*].street_line_2?             : owner.addresses[*].line2 | @ProperName
+addresses[*].city_name                  : owner.addresses[*].city | @ProperName
+addresses[*].state_code                 : owner.addresses[*].stateProvince
+addresses[*].postal_code                : owner.addresses[*].postalCode
+addresses[*].country_code               : owner.addresses[*].countryCode
+addresses[*].mailing_flag               : owner.addresses[*].isMailing | @ToBoolean
+addresses[*].legal_flag                 : owner.addresses[*].isLegal | @ToBoolean
+
+#===============================================================================
+# EMPLOYMENT & FINANCIALS
+#===============================================================================
+
+employment.emp_status                   : owner.financialProfile.employment.status
+employment.employer_name                : owner.financialProfile.employment.company | @ProperName
+employment.job_title                    : owner.financialProfile.employment.title | @ProperName
+employment.employer_industry            : owner.financialProfile.employment.industry
+employment.years_employed               : owner.financialProfile.employment.tenure | to_int
+
+employment.income_salary                : owner.financialProfile.income.base | @Money
+employment.income_bonus                 : owner.financialProfile.income.bonus | @Money
+employment.income_other                 : owner.financialProfile.income.other | @Money
+employment.income_currency              : owner.financialProfile.income.currency
+
+# Computed total income
+@compute(employment.income_salary + employment.income_bonus + employment.income_other)
+                                        : owner.financialProfile.income.total | @Money
+
+net_worth.liquid_assets                 : owner.financialProfile.wealth.liquid | @Money
+net_worth.illiquid_assets               : owner.financialProfile.wealth.illiquid | @Money
+net_worth.total_net_worth               : owner.financialProfile.wealth.total | @Money
+net_worth.as_of_date                    : owner.financialProfile.wealth.asOfDate
+
+#===============================================================================
+# HOLDINGS (Complex Nested Array)
+#===============================================================================
+
+holdings[*].holding_id                  : positions[*].holdingId
+holdings[*].asset_class                 : positions[*].assetClass
+holdings[*].asset_subclass              : positions[*].subClass
+
+# Security info
+holdings[*].security.security_id        : positions[*].instrument.id
+holdings[*].security.ticker             : positions[*].instrument.symbol
+holdings[*].security.name               : positions[*].instrument.name | @ProperName
+holdings[*].security.security_type      : positions[*].instrument.type
+holdings[*].security.cusip              : positions[*].instrument.identifiers.cusip
+holdings[*].security.isin               : positions[*].instrument.identifiers.isin
+holdings[*].security.sector             : positions[*].instrument.classification.sector
+holdings[*].security.industry           : positions[*].instrument.classification.industry
+holdings[*].security.exchange           : positions[*].instrument.exchange
+
+# Market data
+holdings[*].market_data.last_price      : positions[*].pricing.current | @Money
+holdings[*].market_data.prev_close      : positions[*].pricing.previousClose | @Money
+holdings[*].market_data.day_change      : positions[*].pricing.change | @Money
+holdings[*].market_data.day_change_pct  : positions[*].pricing.changePct | @Percent
+holdings[*].market_data.price_date      : positions[*].pricing.asOfDate
+
+# Valuation
+holdings[*].valuation.market_value      : positions[*].valuation.marketValue | @Money
+holdings[*].valuation.unrealized_gain   : positions[*].valuation.unrealizedGain | @Money
+holdings[*].valuation.portfolio_pct     : positions[*].valuation.portfolioWeight | @Percent
+
+#===============================================================================
+# TRANSACTIONS
+#===============================================================================
+
+transactions[*].txn_id                  : activityLog[*].transactionId
+transactions[*].txn_date                : activityLog[*].date
+transactions[*].settle_date             : activityLog[*].settlementDate
+transactions[*].txn_type                : activityLog[*].type
+transactions[*].status                  : activityLog[*].status
+transactions[*].security_ticker         : activityLog[*].instrument.symbol
+transactions[*].security_name           : activityLog[*].instrument.name | @ProperName
+transactions[*].quantity                : activityLog[*].quantity | to_int
+transactions[*].price                   : activityLog[*].price | @Money
+transactions[*].gross_amount            : activityLog[*].grossAmount | @Money
+transactions[*].net_amount              : activityLog[*].netAmount | @Money
+transactions[*].account_id              : activityLog[*].accountId
+
+#===============================================================================
+# PERFORMANCE METRICS
+#===============================================================================
+
+performance.as_of_date                  : performanceMetrics.asOfDate
+performance.inception_return            : performanceMetrics.returns.sinceInception.total | @Percent
+performance.inception_annualized        : performanceMetrics.returns.sinceInception.annualized | @Percent
+performance.ytd_return                  : performanceMetrics.returns.yearToDate.total | @Percent
+performance.benchmark_ytd               : performanceMetrics.returns.yearToDate.benchmark | @Percent
+
+# Trailing periods array
+performance.periods[*].period           : performanceMetrics.returns.trailing[*].period
+performance.periods[*].return           : performanceMetrics.returns.trailing[*].return | @Percent
+performance.periods[*].benchmark        : performanceMetrics.returns.trailing[*].benchmark | @Percent
+
+# Risk metrics
+performance.risk_metrics.std_deviation  : performanceMetrics.risk.volatility | @Percent
+performance.risk_metrics.sharpe_ratio   : performanceMetrics.risk.sharpeRatio | @Percent
+performance.risk_metrics.beta           : performanceMetrics.risk.beta | @Percent
+performance.risk_metrics.max_drawdown   : performanceMetrics.risk.drawdown.maximum | @Percent
+performance.risk_metrics.max_drawdown_date : performanceMetrics.risk.drawdown.date
+
+#===============================================================================
+# METADATA
+#===============================================================================
+
+"3.0"                                   : metadata.schemaVersion | constant
+portfolio_header.portfolio_id           : metadata.sourceId
+audit.created_timestamp                 : metadata.createdAt
+audit.modified_timestamp                : metadata.updatedAt
+audit.record_version                    : metadata.version | to_int
+@now                                    : metadata.transformedAt
+@uuid                                   : metadata.transformationId
+
+#===============================================================================
+# END OF MAPPING
+#===============================================================================

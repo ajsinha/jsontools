@@ -14,10 +14,10 @@ Patent Pending: Certain implementations may be subject to patent applications.
 Command Line Interface for JsonSchemaCodeGen.
 
 Usage:
-    jsonschemacodegen generate --schema schema.json --output models.py
-    jsonschemacodegen sample --schema schema.json --count 5
-    jsonschemacodegen validate --schema schema.json --data data.json
-    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir output/
+    jsontools generate --schema schema.json --output models.py
+    jsontools sample --schema schema.json --count 5
+    jsontools validate --schema schema.json --data data.json
+    jsontools generate-module --schema-dir schemas/ --output-dir output/
 """
 
 import argparse
@@ -35,29 +35,29 @@ from .generators.code_generator import CodeGenerator
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
     parser = argparse.ArgumentParser(
-        prog="jsonschemacodegen",
+        prog="jsontools",
         description="Generate Python code and sample data from JSON Schema",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   Generate Python dataclasses:
-    jsonschemacodegen generate -s schema.json -o models.py
+    jsontools generate -s schema.json -o models.py
     
   Generate sample JSON data:
-    jsonschemacodegen sample -s schema.json -c 10 -o samples.json
+    jsontools sample -s schema.json -c 10 -o samples.json
     
   Validate a schema:
-    jsonschemacodegen validate -s schema.json
+    jsontools validate -s schema.json
     
   Validate data against schema:
-    jsonschemacodegen validate -s schema.json -d data.json
+    jsontools validate -s schema.json -d data.json
     
   Generate module from schema folder:
-    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir output/
-    jsonschemacodegen generate-module --schema-dir schemas/ --output-dir output/ --module-name mymodels
+    jsontools generate-module --schema-dir schemas/ --output-dir output/
+    jsontools generate-module --schema-dir schemas/ --output-dir output/ --module-name mymodels
     
   Analyze schema complexity:
-    jsonschemacodegen info -s schema.json
+    jsontools info -s schema.json
 
 Copyright (C) 2025-2030, Ashutosh Sinha. All Rights Reserved.
 """,

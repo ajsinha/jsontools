@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 """
-JsonSchemaCodeGen - Setup Configuration
+JsonTools - Commercial Grade JSON Schema Tools
 
 Copyright (C) 2025-2030, All Rights Reserved
 Ashutosh Sinha
@@ -10,27 +11,47 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 # Read version
-version = "1.2.3"
+version_file = Path(__file__).parent / "VERSION"
+version = version_file.read_text().strip() if version_file.exists() else "1.3.0"
 
-# Read long description
-readme_path = Path(__file__).parent / "README.md"
-if readme_path.exists():
-    long_description = readme_path.read_text(encoding="utf-8")
-else:
-    long_description = "Commercial Grade JSON Schema to Python Code Generator"
+# Read README
+readme_file = Path(__file__).parent / "README.md"
+long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists() else ""
 
 setup(
-    name="jsonschemacodegen",
+    name="jsontools",
     version=version,
     author="Ashutosh Sinha",
     author_email="ajsinha@gmail.com",
-    description="Commercial Grade JSON Schema to Python Code Generator",
+    description="Commercial Grade JSON Schema to Python Code Generator with SchemaMap Transformation DSL",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ajsinha/jsonschemacodegen",
+    url="https://github.com/ajsinha/jsontools",
     packages=find_packages(exclude=["tests", "tests.*", "examples", "examples.*"]),
     package_data={
-        "jsonschemacodegen": ["py.typed"],
+        "jsontools": ["py.typed"],
+    },
+    python_requires=">=3.8",
+    install_requires=[],
+    extras_require={
+        "faker": ["faker>=18.0.0"],
+        "requests": ["requests>=2.28.0"],
+        "validation": ["jsonschema>=4.17.0"],
+        "all": ["faker>=18.0.0", "requests>=2.28.0", "jsonschema>=4.17.0"],
+        "dev": [
+            "faker>=18.0.0",
+            "requests>=2.28.0", 
+            "jsonschema>=4.17.0",
+            "pytest>=7.0.0",
+            "pytest-cov>=4.0.0",
+            "black>=23.0.0",
+            "mypy>=1.0.0",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "jsontools=jsontools.cli:main",
+        ],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -47,34 +68,5 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Typing :: Typed",
     ],
-    python_requires=">=3.8",
-    install_requires=[],  # No required dependencies
-    extras_require={
-        "faker": ["faker>=18.0.0"],
-        "requests": ["requests>=2.28.0"],
-        "jsonschema": ["jsonschema>=4.17.0"],
-        "all": [
-            "faker>=18.0.0",
-            "requests>=2.28.0",
-            "jsonschema>=4.17.0",
-        ],
-        "dev": [
-            "faker>=18.0.0",
-            "requests>=2.28.0",
-            "jsonschema>=4.17.0",
-            "pytest>=7.0.0",
-            "pytest-cov>=4.0.0",
-            "black>=23.0.0",
-            "isort>=5.12.0",
-            "mypy>=1.0.0",
-            "flake8>=6.0.0",
-        ],
-    },
-    entry_points={
-        "console_scripts": [
-            "jsonschemacodegen=jsonschemacodegen.cli:main",
-        ],
-    },
-    include_package_data=True,
-    zip_safe=False,
+    keywords="json schema codegen dataclass transformation dsl schemamap",
 )

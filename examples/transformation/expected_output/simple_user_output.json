@@ -1,0 +1,16 @@
+{
+  "userId": "USR-001",
+  "status": "ACTIVE",
+  "fullName": "John Doe",
+  "contactEmail": "john.doe@example.com",
+  "age": 35,
+  "address": {
+    "line1": "123 Main Street",
+    "city": "New York",
+    "postalCode": "10001"
+  },
+  "interests": [],
+  "version": "1.0",
+  "transformedAt": "2026-01-30T01:17:33.716613Z",
+  "transformId": "62900d48-b677-490d-b13b-3979fb0de689"
+}

@@ -1,11 +1,12 @@
-# JsonSchemaCodeGen v1.2.0
+# JsonTools v1.4.0
 
 ```
 +==============================================================================+
 |                                                                              |
-|                        JsonSchemaCodeGen v1.2.0                              |
+|                           JsonTools v1.4.0                                   |
 |                                                                              |
 |            Commercial Grade JSON Schema to Python Code Generator             |
+|                      with SchemaMap Transformation DSL                       |
 |                                                                              |
 |                  Copyright (C) 2025-2030, All Rights Reserved                |
 |                      Ashutosh Sinha (ajsinha@gmail.com)                      |
@@ -21,232 +22,222 @@
 **Ashutosh Sinha**  
 **Email: ajsinha@gmail.com**
 
-This software is proprietary and confidential. Unauthorized copying, distribution, modification, or use is strictly prohibited without explicit written permission from the copyright holder.
-
-**Patent Pending:** Certain architectural patterns and implementations may be subject to patent applications.
-
 ---
 
 ## Overview
 
-**JsonSchemaCodeGen** is a comprehensive, commercial-grade Python library for working with JSON Schema. It provides powerful, production-ready tools for:
+**JsonTools** is a comprehensive, commercial-grade Python library for working with JSON Schema. It provides powerful, production-ready tools for:
 
-- Schema Parsing: Parse and analyze JSON Schema documents with full Draft-07 support
-- Code Generation: Generate Python dataclasses from JSON Schema
-- Sample Data Generation: Create realistic test data with Faker integration
-- Validation: Validate schemas and data with detailed error reporting
-- Reference Resolution: Handle complex `$ref` references including remote schemas
-- Module Generation: Generate complete Python modules from schema folders
-
----
-
-## Key Features
-
-### Module Generation (Recommended)
-
-Generate complete, ready-to-use Python modules from schema folders:
-
-```bash
-python -m jsonschemacodegen generate-module \
-    --schema-dir schemas/ \
-    --output-dir output/ \
-    --module-name mymodels
-```
-
-Creates:
-```
-output/
-+-- mymodels/                # Module folder inside output-dir
-    +-- __init__.py          # Main module exports
-    +-- __main__.py          # CLI support
-    +-- driver.py            # JSON utilities
-    +-- main.py              # High-level functions
-    +-- generated/           # Generated dataclasses
-        +-- __init__.py
-        +-- *.py
-```
-
-### Generated Class Features
-
-- No-argument constructor: `user = User()`
-- Value assignment after creation: `user.name = "John"`
-- Validation method: `result = user.validate()`
-  - Checks required fields are populated
-  - Validates enum values
-
-### Code Generation
-
-Generate Python dataclasses with full type hints, serialization methods, and validation.
-
-### Sample Data Generation
-
-- Faker Integration: Realistic names, emails, addresses, etc.
-- Constraint-Aware: Respects min/max, patterns, formats
-- Format-Specific: Proper UUID, email, datetime generation
-
-### Validation
-
-- Schema structure validation
-- Data validation against schema
-- Detailed error paths
+- **Schema Parsing**: Parse and analyze JSON Schema documents with full Draft-07 support
+- **Code Generation**: Generate Python dataclasses from JSON Schema
+- **Sample Data Generation**: Create realistic test data with Faker integration
+- **Validation**: Validate schemas and data with detailed error reporting
+- **Reference Resolution**: Handle complex `$ref` references including remote schemas
+- **Module Generation**: Generate complete Python modules from schema folders
+- **SchemaMap Transformation**: Transform JSON between schemas using a declarative DSL
+- **External Python Functions**: Call custom Python functions from SchemaMap DSL
+- **Code Compilation**: Compile SchemaMap to optimized Python code (5-10x faster!)
 
 ---
 
-## Installation
+## What's New in v1.4.0
 
-### From Source
+### Compiled Transformations (5-10x Faster!)
 
-```bash
-cd jsonschemacodegen
-pip install .
-```
-
-### With Optional Dependencies
+SchemaMap can now compile `.smap` files to standalone Python code:
 
 ```bash
-pip install .[all]        # All features
-pip install .[faker]      # Realistic sample data
-pip install .[dev]        # Development tools
+# Compile to Python
+python transform.py --compile mapping.smap -o transformer.py
+
+# Benchmark interpreted vs compiled
+python transform.py --benchmark mapping.smap input.json
 ```
+
+**Benchmark Results:**
+```
+  Interpreted Transformer:
+    Ops/second:     7,927
+    μs/operation:   126.15
+
+  Compiled Transformer:
+    Ops/second:     41,236
+    μs/operation:   24.25
+
+  SPEEDUP: 5.2x faster with compiled code!
+```
+
+The generated code is:
+- **Standalone** - No SchemaMap runtime dependency
+- **Optimized** - Transforms inlined, no function lookups
+- **Type-hinted** - Full IDE support
+- **Production-ready** - Use directly in your applications
 
 ---
 
 ## Quick Start
 
-### Generate Module from Schema Folder (Recommended)
+### Install
 
 ```bash
-# Generate module - creates output/mymodels/
-python -m jsonschemacodegen generate-module \
-    --schema-dir schemas/ \
-    --output-dir output/ \
-    --module-name mymodels
+pip install .
 ```
 
-```python
-# Use the generated module
-import sys
-sys.path.insert(0, "output")
+### Generate Python Module from JSON Schemas
 
-from mymodels import User, Product, Order
-from mymodels import load_json, to_json, generate_sample
-
-# Create instance with no arguments
-user = User()
-user.id_ = "123"
-user.name = "John"
-user.email = "john@example.com"
-
-# Validate
-result = user.validate()
-if result.is_valid:
-    print("User is valid!")
-else:
-    print("Errors:", result.errors)
-
-# Serialize
-to_json(user, "output/user.json")
-
-# Load from JSON
-loaded_user = load_json("user.json", "User")
+```bash
+python -m jsontools generate-module \
+    --schema-dir ./schemas \
+    --output-dir ./generated \
+    --module-name my_models
 ```
 
-### Single Schema Processing
+### Transform JSON Data
+
+```bash
+# Interpreted (flexible, good for development)
+python transform.py mapping.smap input.json
+
+# Compiled (fast, good for production)
+python transform.py --compile mapping.smap -o transformer.py
+python transformer.py input.json
+```
+
+### Python API
 
 ```python
-from jsonschemacodegen import SchemaProcessor
+from jsontools.transformation import transform, load_mapping
 
-schema = {
-    "type": "object",
-    "title": "User",
-    "properties": {
-        "id": {"type": "string", "format": "uuid"},
-        "name": {"type": "string"},
-        "email": {"type": "string", "format": "email"}
-    },
-    "required": ["id", "name", "email"]
+# Simple transformation
+result = transform(source_data, "mapping.smap")
+
+# With custom functions
+transformer = load_mapping("mapping.smap")
+transformer.register_function("calc_tax", lambda x, r: round(x * r, 2))
+result = transformer.transform(data)
+```
+
+---
+
+## SchemaMap Transformation DSL
+
+SchemaMap is a declarative DSL for transforming JSON between schemas.
+
+### Example Mapping File
+
+```
+@config {
+    null_handling : omit
 }
 
-processor = SchemaProcessor(schema, root_class_name="User")
+@lookups {
+    status_codes : { "A": "ACTIVE", "I": "INACTIVE" }
+}
 
-# Generate Python dataclass
-code = processor.generate_code()
-print(code)
+# Simple mappings
+user.id                                 : userId
+user.email                              : email | lowercase | trim
 
-# Generate sample data
-samples = processor.generate_samples(count=3)
+# Concatenation
+user.first + " " + user.last            : fullName | titlecase
+
+# Coalescing
+user.mobile ?? user.phone               : primaryPhone
+
+# Lookups
+user.status                             : status | lookup(@status_codes)
+
+# Computed fields
+@compute(sum(items[*].price))           : total
+@now                                    : processedAt
+@uuid                                   : transactionId
+
+# External functions
+@compute(calculate_tax(subtotal, 0.08)) : tax
 ```
 
-### Command Line
+### Run Transformation
 
 ```bash
-# Generate code from single schema
-python -m jsonschemacodegen generate -s schema.json -o models.py
+# Interpret (development)
+python transform.py mapping.smap input.json
 
-# Generate module from schema folder
-python -m jsonschemacodegen generate-module \
-    --schema-dir schemas/ \
-    --output-dir output/ \
-    --module-name mymodels
+# Compile (production)
+python transform.py --compile mapping.smap -o transformer.py
 
-# Generate sample data
-python -m jsonschemacodegen sample -s schema.json -c 10 -o samples.json
-
-# Validate data
-python -m jsonschemacodegen validate -s schema.json -d data.json
+# Benchmark
+python transform.py --benchmark mapping.smap input.json --iterations 10000
 ```
+
+### Key Features
+
+- **90+ Built-in Functions**: String, numeric, date, array transforms
+- **External Python Functions**: Call custom functions from DSL
+- **Aliases**: Define reusable transform chains
+- **Lookups**: Map codes to values
+- **Array Support**: Transform arrays element-by-element
+- **Computed Fields**: Generate values with expressions
+- **Schema Validation**: Validate output against JSON Schema
+- **Code Compilation**: Generate optimized Python code
+
+See [docs/SCHEMAMAP.md](docs/SCHEMAMAP.md) for full documentation.
 
 ---
 
-## Generated Module CLI
+## CLI Reference
 
-The generated module includes its own CLI:
+### Transform Data
 
 ```bash
-# List classes
-python -m mymodels list
-
-# Show class info
-python -m mymodels info User
-
-# Generate sample
-python -m mymodels sample User -o sample.json
-
-# Validate JSON
-python -m mymodels validate user.json User
+python transform.py mapping.smap input.json
+python transform.py mapping.smap input.json --output result.json
+python transform.py mapping.smap input.json --schema target_schema.json
+python transform.py mapping.smap input.json --functions custom_funcs.py
 ```
 
----
+### Compile to Python
 
-## Documentation
+```bash
+python transform.py --compile mapping.smap
+python transform.py --compile mapping.smap -o my_transformer.py
+python transform.py --compile mapping.smap -o transformer.py --class-name CustomerTransformer
+```
 
-| Document | Description |
-|----------|-------------|
-| [QUICKSTART.md](docs/QUICKSTART.md) | Get started in 5 minutes |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and design |
-| [MODULE_GENERATOR.md](docs/MODULE_GENERATOR.md) | Complete module generation guide |
-| [EXAMPLES.md](docs/EXAMPLES.md) | Guide to 22+ example schemas |
+### Benchmark Performance
+
+```bash
+python transform.py --benchmark mapping.smap input.json
+python transform.py --benchmark mapping.smap input.json --iterations 50000
+```
 
 ---
 
 ## Project Structure
 
 ```
-jsonschemacodegen/
-+-- jsonschemacodegen/           # Main package
-|   +-- __init__.py              # Public API exports
-|   +-- cli.py                   # CLI implementation
-|   +-- module_generator.py      # Module generation
-|   +-- core/                    # Core processing
-|   +-- generators/              # Code generators
-|   +-- models/                  # Data models
-|   +-- utils/                   # Utilities
-+-- examples/schemas/            # 22+ example schemas
-+-- docs/                        # Documentation
-+-- tests/                       # Test suite
-+-- main.py                      # Demo script
-+-- generate.py                  # Module generator script
-+-- README.md
+jsontools/
+├── jsontools/                   # Main package
+│   ├── __init__.py              # Public API
+│   ├── cli.py                   # CLI implementation
+│   ├── module_generator.py      # Module generation
+│   ├── core/                    # Core processing
+│   ├── generators/              # Code generators
+│   ├── models/                  # Data models
+│   ├── utils/                   # Utilities
+│   └── transformation/          # SchemaMap module
+│       ├── parser/              # Lexer, parser, AST
+│       ├── engine/              # Transformer, evaluator
+│       └── compiler/            # Python code generator
+├── examples/
+│   ├── schemas/                 # 22+ JSON schemas
+│   └── transformation/          # SchemaMap examples
+│       ├── source_data/         # Input JSON files
+│       ├── mappings/            # .smap files
+│       ├── compiled/            # Generated Python code
+│       └── target_schemas/      # Output schemas
+├── docs/                        # Documentation
+├── transform.py                 # CLI runner & compiler
+└── README.md
 ```
 
 ---
@@ -258,19 +249,9 @@ jsonschemacodegen/
 - No external dependencies (pure Python core)
 
 ### Optional
-
-| Package | Purpose |
-|---------|---------|
-| faker | Realistic sample data |
-| requests | Remote schema fetching |
-| jsonschema | Enhanced validation |
-
----
-
-## Support
-
-**Ashutosh Sinha**  
-**Email: ajsinha@gmail.com**
+- **faker**: Realistic sample data
+- **requests**: Remote schema fetching
+- **jsonschema**: Enhanced validation
 
 ---
 
@@ -278,4 +259,5 @@ jsonschemacodegen/
 
 This software is proprietary and confidential. See [LICENSE](LICENSE) for full terms.
 
-**Copyright (C) 2025-2030, All Rights Reserved**
+**Copyright (C) 2025-2030, All Rights Reserved**  
+**Ashutosh Sinha - ajsinha@gmail.com**

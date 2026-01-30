@@ -1,0 +1,14 @@
+{
+  "user": {
+    "id": "USR-001",
+    "status": "A",
+    "first_name": "JOHN",
+    "last_name": "DOE",
+    "email": "JOHN.DOE@EXAMPLE.COM",
+    "age": "35",
+    "street": "123 Main Street",
+    "city": "new york",
+    "zip": "10001",
+    "tags": ["TECHNOLOGY", "FINANCE", "Sports"]
+  }
+}

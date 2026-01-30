@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ModernCustomer",
+  "description": "Modern Customer API schema for transformed customer data",
+  "type": "object",
+  "required": ["customerId", "customerType", "status", "profile"],
+  "properties": {
+    "customerId": {
+      "type": "string",
+      "description": "Unique customer identifier"
+    },
+    "customerType": {
+      "type": "string",
+      "enum": ["PREMIUM", "STANDARD", "BASIC"],
+      "description": "Customer tier classification"
+    },
+    "registrationDate": {
+      "type": "string",
+      "description": "Date customer registered"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "INACTIVE", "SUSPENDED", "CLOSED"],
+      "description": "Current customer status"
+    },
+    "profile": {
+      "type": "object",
+      "required": ["firstName", "lastName"],
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "dateOfBirth": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["MALE", "FEMALE", "OTHER"]
+        },
+        "taxId": {
+          "type": "object",
+          "properties": {
+            "full": {
+              "type": "string",
+              "description": "Full tax ID (sensitive)"
+            },
+            "masked": {
+              "type": "string",
+              "description": "Masked tax ID for display"
+            }
+          }
+        }
+      }
+    },
+    "contactInfo": {
+      "type": "object",
+      "properties": {
+        "primaryEmail": {
+          "type": "string",
+          "format": "email"
+        },
+        "secondaryEmail": {
+          "type": "string",
+          "format": "email"
+        },
+        "preferredChannel": {
+          "type": "string"
+        },
+        "phones": {
+          "type": "object",
+          "properties": {
+            "home": {
+              "type": "string"
+            },
+            "mobile": {
+              "type": "string"
+            },
+            "work": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "addresses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "line1", "city", "stateProvince", "postalCode", "countryCode"],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "stateProvince": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isMailing": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "financialAccounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["accountId", "type", "currentBalance"],
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["CHECKING_ACCOUNT", "SAVINGS_ACCOUNT", "INVESTMENT_ACCOUNT", "CREDIT_ACCOUNT"]
+          },
+          "currentBalance": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "openedDate": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "marketing": {
+          "type": "boolean"
+        },
+        "paperless": {
+          "type": "boolean"
+        },
+        "locale": {
+          "type": "object",
+          "properties": {
+            "language": {
+              "type": "string"
+            },
+            "timezone": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "totalAccounts": {
+          "type": "integer"
+        },
+        "totalBalance": {
+          "type": "number"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "transformedAt": {
+          "type": "string"
+        },
+        "transformationId": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

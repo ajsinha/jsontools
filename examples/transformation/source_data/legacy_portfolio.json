@@ -1,0 +1,293 @@
+{
+  "portfolio_header": {
+    "portfolio_id": "PF-2024-88721",
+    "portfolio_name": "GROWTH STRATEGY PORTFOLIO",
+    "portfolio_type": "MANAGED",
+    "inception_dt": "2018-03-15",
+    "benchmark_idx": "SPX",
+    "risk_category": "MODERATE_AGGRESSIVE",
+    "risk_score": 72
+  },
+  "owner_info": {
+    "owner_id": "OWN-991823",
+    "owner_type": "INDIVIDUAL",
+    "name_first": "JONATHAN",
+    "name_middle": "EDWARD",
+    "name_last": "WHITMORE",
+    "name_suffix": "III",
+    "birth_date": "1975-08-22",
+    "tax_id": "123-45-6789",
+    "citizenship": ["US", "UK"],
+    "residency": "US_RESIDENT"
+  },
+  "contact_info": {
+    "email_primary": "JONATHAN.WHITMORE@EMAIL.COM",
+    "email_secondary": "jwhitmore@enterprise.com",
+    "phone_home": "+1-203-555-1234",
+    "phone_mobile": "+1-212-555-9876",
+    "contact_pref": "EMAIL",
+    "do_not_call": "N",
+    "do_not_email": "N"
+  },
+  "addresses": [
+    {
+      "address_type": "PRIMARY",
+      "street_line_1": "450 PARK AVENUE",
+      "street_line_2": "APT 32B",
+      "city_name": "NEW YORK",
+      "state_code": "NY",
+      "postal_code": "10022",
+      "country_code": "US",
+      "mailing_flag": "Y",
+      "legal_flag": "Y"
+    },
+    {
+      "address_type": "VACATION",
+      "street_line_1": "78 OCEAN DRIVE",
+      "street_line_2": null,
+      "city_name": "PALM BEACH",
+      "state_code": "FL",
+      "postal_code": "33480",
+      "country_code": "US",
+      "mailing_flag": "N",
+      "legal_flag": "N"
+    }
+  ],
+  "employment": {
+    "emp_status": "EMPLOYED",
+    "employer_name": "ENTERPRISE HOLDINGS INC",
+    "employer_industry": "FINANCIAL_SERVICES",
+    "job_title": "MANAGING DIRECTOR",
+    "years_employed": 12,
+    "income_salary": 850000,
+    "income_bonus": 400000,
+    "income_other": 125000,
+    "income_currency": "USD"
+  },
+  "net_worth": {
+    "liquid_assets": 4500000,
+    "illiquid_assets": 8200000,
+    "total_net_worth": 12700000,
+    "currency": "USD",
+    "as_of_date": "2024-01-15"
+  },
+  "holdings": [
+    {
+      "holding_id": "HLD-001",
+      "asset_class": "EQUITY",
+      "asset_subclass": "US_LARGE_CAP",
+      "security": {
+        "security_id": "SEC-AAPL",
+        "cusip": "037833100",
+        "isin": "US0378331005",
+        "ticker": "AAPL",
+        "name": "APPLE INC",
+        "security_type": "COMMON_STOCK",
+        "sector": "TECHNOLOGY",
+        "industry": "CONSUMER_ELECTRONICS",
+        "currency": "USD",
+        "exchange": "NASDAQ"
+      },
+      "positions": [
+        {
+          "account_type": "TAXABLE",
+          "account_id": "TAX-8872",
+          "quantity": 500,
+          "cost_basis_total": 62500.00,
+          "cost_basis_per_share": 125.00,
+          "cost_method": "SPECIFIC_ID",
+          "lots": [
+            {
+              "lot_id": "LOT-001",
+              "acquired_date": "2020-03-15",
+              "quantity": 200,
+              "cost_per_share": 68.50,
+              "total_cost": 13700.00,
+              "holding_period": "LONG_TERM"
+            },
+            {
+              "lot_id": "LOT-002",
+              "acquired_date": "2021-09-22",
+              "quantity": 150,
+              "cost_per_share": 142.30,
+              "total_cost": 21345.00,
+              "holding_period": "LONG_TERM"
+            },
+            {
+              "lot_id": "LOT-003",
+              "acquired_date": "2023-11-08",
+              "quantity": 150,
+              "cost_per_share": 183.03,
+              "total_cost": 27455.00,
+              "holding_period": "LONG_TERM"
+            }
+          ]
+        },
+        {
+          "account_type": "IRA",
+          "account_id": "IRA-3321",
+          "quantity": 300,
+          "cost_basis_total": 45600.00,
+          "cost_basis_per_share": 152.00,
+          "cost_method": "AVERAGE_COST",
+          "lots": []
+        }
+      ],
+      "market_data": {
+        "last_price": 178.54,
+        "prev_close": 177.89,
+        "day_change": 0.65,
+        "day_change_pct": 0.37,
+        "high_52w": 199.62,
+        "low_52w": 164.08,
+        "price_date": "2024-12-15",
+        "price_time": "16:00:00"
+      },
+      "valuation": {
+        "market_value": 142832.00,
+        "unrealized_gain": 80332.00,
+        "unrealized_gain_pct": 128.53,
+        "portfolio_pct": 8.42
+      }
+    },
+    {
+      "holding_id": "HLD-002",
+      "asset_class": "FIXED_INCOME",
+      "asset_subclass": "US_CORPORATE",
+      "security": {
+        "security_id": "SEC-MSFT-BOND",
+        "cusip": "594918BW8",
+        "isin": "US594918BW83",
+        "ticker": null,
+        "name": "MICROSOFT CORP 2.525% 2050",
+        "security_type": "CORPORATE_BOND",
+        "sector": "TECHNOLOGY",
+        "industry": "SOFTWARE",
+        "currency": "USD",
+        "exchange": null,
+        "bond_details": {
+          "coupon_rate": 2.525,
+          "coupon_freq": "SEMI_ANNUAL",
+          "maturity_date": "2050-06-01",
+          "call_date": "2049-12-01",
+          "callable": "Y",
+          "face_value": 1000,
+          "rating_moodys": "Aaa",
+          "rating_sp": "AAA",
+          "rating_fitch": "AAA"
+        }
+      },
+      "positions": [
+        {
+          "account_type": "TAXABLE",
+          "account_id": "TAX-8872",
+          "quantity": 100,
+          "cost_basis_total": 98500.00,
+          "cost_basis_per_share": 985.00,
+          "cost_method": "SPECIFIC_ID",
+          "lots": [
+            {
+              "lot_id": "LOT-010",
+              "acquired_date": "2022-01-18",
+              "quantity": 100,
+              "cost_per_share": 985.00,
+              "total_cost": 98500.00,
+              "holding_period": "LONG_TERM"
+            }
+          ]
+        }
+      ],
+      "market_data": {
+        "last_price": 842.50,
+        "prev_close": 840.25,
+        "day_change": 2.25,
+        "day_change_pct": 0.27,
+        "yield_current": 3.85,
+        "duration": 18.5,
+        "price_date": "2024-12-15",
+        "price_time": "16:00:00"
+      },
+      "valuation": {
+        "market_value": 84250.00,
+        "unrealized_gain": -14250.00,
+        "unrealized_gain_pct": -14.47,
+        "portfolio_pct": 4.97
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "txn_id": "TXN-2024-001",
+      "txn_date": "2024-12-10",
+      "settle_date": "2024-12-12",
+      "txn_type": "BUY",
+      "status": "SETTLED",
+      "security_ticker": "AAPL",
+      "security_cusip": "037833100",
+      "security_name": "APPLE INC",
+      "quantity": 50,
+      "price": 175.25,
+      "gross_amount": 8762.50,
+      "commission": 4.95,
+      "fee_sec": 0.02,
+      "fee_taf": 0.01,
+      "fee_other": 0,
+      "net_amount": 8767.48,
+      "account_id": "TAX-8872",
+      "order_source": "ONLINE",
+      "order_type": "MARKET",
+      "execution_venue": "NASDAQ",
+      "trade_ref": "EXE-2024-88821"
+    },
+    {
+      "txn_id": "TXN-2024-002",
+      "txn_date": "2024-12-08",
+      "settle_date": "2024-12-10",
+      "txn_type": "DIVIDEND",
+      "status": "SETTLED",
+      "security_ticker": "AAPL",
+      "security_cusip": "037833100",
+      "security_name": "APPLE INC",
+      "quantity": 800,
+      "price": 0.25,
+      "gross_amount": 200.00,
+      "commission": 0,
+      "fee_sec": 0,
+      "fee_taf": 0,
+      "fee_other": 0,
+      "net_amount": 200.00,
+      "account_id": "TAX-8872",
+      "dividend_type": "QUALIFIED",
+      "ex_date": "2024-11-08",
+      "record_date": "2024-11-11",
+      "pay_date": "2024-12-08"
+    }
+  ],
+  "performance": {
+    "as_of_date": "2024-12-15",
+    "inception_return": 89.52,
+    "inception_annualized": 10.21,
+    "ytd_return": 18.75,
+    "benchmark_ytd": 24.50,
+    "periods": [
+      {"period": "1M", "return": 2.15, "benchmark": 2.89},
+      {"period": "3M", "return": 5.82, "benchmark": 7.21},
+      {"period": "1Y", "return": 15.43, "benchmark": 22.18},
+      {"period": "3Y", "return": 32.15, "benchmark": 28.92}
+    ],
+    "risk_metrics": {
+      "std_deviation": 14.25,
+      "sharpe_ratio": 0.82,
+      "beta": 0.95,
+      "max_drawdown": -18.42,
+      "max_drawdown_date": "2022-10-12"
+    }
+  },
+  "audit": {
+    "created_timestamp": "2018-03-15T09:30:00Z",
+    "created_by": "ADVISOR-118",
+    "modified_timestamp": "2024-12-15T18:45:00Z",
+    "modified_by": "SYSTEM",
+    "record_version": 1247
+  }
+}

@@ -1,4 +1,4 @@
-# JsonSchemaCodeGen - Architecture
+# JsonTools - Architecture
 
 Copyright (C) 2025-2030, All Rights Reserved
 Ashutosh Sinha (ajsinha@gmail.com)
@@ -9,7 +9,7 @@ Ashutosh Sinha (ajsinha@gmail.com)
 
 ```
 +----------------------------------------------------------------------+
-|                        JsonSchemaCodeGen                              |
+|                        JsonTools                              |
 +----------------------------------------------------------------------+
 |                                                                       |
 |  +---------------------------------------------------------------+   |
@@ -36,7 +36,7 @@ Ashutosh Sinha (ajsinha@gmail.com)
 Main entry point for all operations.
 
 ```python
-from jsonschemacodegen import SchemaProcessor
+from jsontools import SchemaProcessor
 
 processor = SchemaProcessor(schema, root_class_name="User")
 info = processor.parse()
@@ -45,7 +45,7 @@ samples = processor.generate_samples(count=5)
 result = processor.validate_data(data)
 ```
 
-### 2. Core Module (jsonschemacodegen/core/)
+### 2. Core Module (jsontools/core/)
 
 | Component | Purpose |
 |-----------|---------|
@@ -54,7 +54,7 @@ result = processor.validate_data(data)
 | TypeMapper | Map JSON types to Python types |
 | SchemaValidator | Validate schema structure |
 
-### 3. Generators Module (jsonschemacodegen/generators/)
+### 3. Generators Module (jsontools/generators/)
 
 | Component | Purpose |
 |-----------|---------|
@@ -67,7 +67,7 @@ result = processor.validate_data(data)
 Generates complete Python modules from schema folders.
 
 ```python
-from jsonschemacodegen import generate_module
+from jsontools import generate_module
 
 result = generate_module(
     schema_dir="schemas/",
@@ -125,7 +125,7 @@ Each generated class includes:
 ## Package Structure
 
 ```
-jsonschemacodegen/
+jsontools/
 +-- __init__.py           # Public API
 +-- cli.py                # CLI implementation
 +-- module_generator.py   # Module generation

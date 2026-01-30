@@ -1,4 +1,4 @@
-# JsonSchemaCodeGen - Examples Guide
+# JsonTools - Examples Guide
 
 Copyright (C) 2025-2030, All Rights Reserved
 Ashutosh Sinha (ajsinha@gmail.com)
@@ -41,7 +41,7 @@ The `examples/schemas/` directory contains 22 production-ready schemas:
 ### Generate Module from All Examples
 
 ```bash
-python -m jsonschemacodegen generate-module \
+python -m jsontools generate-module \
     --schema-dir examples/schemas \
     --output-dir output \
     --module-name models
@@ -50,8 +50,8 @@ python -m jsonschemacodegen generate-module \
 ### Process Single Schema
 
 ```python
-from jsonschemacodegen import SchemaProcessor
-from jsonschemacodegen.utils import load_schema
+from jsontools import SchemaProcessor
+from jsontools.utils import load_schema
 
 schema = load_schema("examples/schemas/01_user.json")
 processor = SchemaProcessor(schema, root_class_name="User")
